@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mcdisplays:block/display_panel",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "mcdisplays:block/display_panel",
+      "y": 270
+    },
+    "facing=south": {
+      "model": "mcdisplays:block/display_panel"
+    },
+    "facing=west": {
+      "model": "mcdisplays:block/display_panel",
+      "y": 90
+    }
+  }
+}

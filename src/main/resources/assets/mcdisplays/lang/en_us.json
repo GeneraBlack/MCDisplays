@@ -1,0 +1,16 @@
+{
+  "block.mcdisplays.display_panel": "Display Panel",
+  "itemGroup.mcdisplays": "MC Displays",
+  "container.mcdisplays.display_panel": "Display Source",
+  "screen.mcdisplays.display_panel.hint": "Put a written book, book and quill, MineColonies resource scroll, or MineColonies clipboard into the slot.",
+  "mcdisplays.configuration.title": "MC Displays Settings",
+  "mcdisplays.configuration.section.display": "Display Settings",
+  "mcdisplays.configuration.display.refreshIntervalTicks": "Refresh interval",
+  "mcdisplays.configuration.display.refreshIntervalTicks.tooltip": "How often MC Displays refreshes book, Resource Scroll, or Clipboard content.\n\n20 ticks = 1 second.",
+  "mcdisplays.configuration.display.maxDisplayWidth": "Maximum display width",
+  "mcdisplays.configuration.display.maxDisplayWidth.tooltip": "Maximum allowed width for one rectangular multiblock display, measured in panels.",
+  "mcdisplays.configuration.display.maxDisplayHeight": "Maximum display height",
+  "mcdisplays.configuration.display.maxDisplayHeight.tooltip": "Maximum allowed height for one rectangular multiblock display, measured in panels.",
+  "mcdisplays.configuration.display.allowManualPageTurning": "Allow manual page turning",
+  "mcdisplays.configuration.display.allowManualPageTurning.tooltip": "If enabled, an empty main hand can turn pages on a display.\n\nRight side advances, left side goes back. Sneak-right-click still removes the source item."
+}
