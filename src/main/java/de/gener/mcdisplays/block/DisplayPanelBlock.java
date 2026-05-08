@@ -53,6 +53,10 @@ public final class DisplayPanelBlock extends BaseEntityBlock implements EntityBl
             return super.useItemOn(stack, state, level, pos, player, hand, hit);
         }
 
+        if (blockEntity.tryApplyInkEffect(player, hand)) {
+            return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
+
         if (blockEntity.tryAcceptSupportedItem(player, hand)) {
             return ItemInteractionResult.sidedSuccess(level.isClientSide);
         }
@@ -68,6 +72,10 @@ public final class DisplayPanelBlock extends BaseEntityBlock implements EntityBl
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof DisplayPanelBlockEntity blockEntity)) {
             return InteractionResult.PASS;
+        }
+
+        if (blockEntity.handleEmptyHand(player)) {
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
         if (player.isSecondaryUseActive() && blockEntity.openMenu(player)) {

@@ -1,6 +1,7 @@
 package de.gener.mcdisplays.content;
 
 import de.gener.mcdisplays.McDisplaysMod;
+import de.gener.mcdisplays.item.MarkdownPadItemData;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
@@ -22,6 +23,10 @@ public final class DisplayContentExtractor {
             return false;
         }
 
+        if (stack.is(McDisplaysMod.MARKDOWN_PAD.get())) {
+            return true;
+        }
+
         if (stack.get(DataComponents.WRITTEN_BOOK_CONTENT) != null || stack.get(DataComponents.WRITABLE_BOOK_CONTENT) != null) {
             return true;
         }
@@ -33,6 +38,10 @@ public final class DisplayContentExtractor {
     public static DisplayDocument extract(Level level, ItemStack stack) {
         if (stack.isEmpty()) {
             return DisplayDocument.placeholder();
+        }
+
+        if (stack.is(McDisplaysMod.MARKDOWN_PAD.get())) {
+            return MarkdownPadItemData.toDisplayDocument(stack);
         }
 
         WrittenBookContent written = stack.get(DataComponents.WRITTEN_BOOK_CONTENT);
@@ -55,7 +64,7 @@ public final class DisplayContentExtractor {
         }
 
         McDisplaysMod.LOGGER.debug("Unsupported display source {}", itemId);
-        return DisplayDocument.message("Unsupported Source", "Only books, resource scrolls and clipboards can be displayed.");
+        return DisplayDocument.message("Unsupported Source", "Only books, Markdown Pads, resource scrolls and clipboards can be displayed.");
     }
 
     private static DisplayDocument extractBook(ItemStack stack, List<?> pages) {

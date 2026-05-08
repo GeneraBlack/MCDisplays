@@ -3,7 +3,9 @@ package de.gener.mcdisplays;
 import com.mojang.logging.LogUtils;
 import de.gener.mcdisplays.block.DisplayPanelBlock;
 import de.gener.mcdisplays.block.DisplayPanelBlockEntity;
+import de.gener.mcdisplays.item.MarkdownPadItem;
 import de.gener.mcdisplays.menu.DisplayPanelMenu;
+import de.gener.mcdisplays.network.SaveMarkdownPadPayload;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
@@ -17,6 +19,8 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -39,6 +43,10 @@ public final class McDisplaysMod {
         "display_panel",
         () -> new BlockItem(DISPLAY_PANEL.get(), new Item.Properties())
     );
+    public static final DeferredItem<MarkdownPadItem> MARKDOWN_PAD = ITEMS.register(
+        "markdown_pad",
+        MarkdownPadItem::new
+    );
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DisplayPanelBlockEntity>> DISPLAY_PANEL_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
         "display_panel",
         () -> BlockEntityType.Builder.of(DisplayPanelBlockEntity::new, DISPLAY_PANEL.get()).build(null)
@@ -52,7 +60,10 @@ public final class McDisplaysMod {
         () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup." + MODID))
             .icon(() -> new ItemStack(DISPLAY_PANEL_ITEM.get()))
-            .displayItems((parameters, output) -> output.accept(DISPLAY_PANEL_ITEM.get()))
+            .displayItems((parameters, output) -> {
+                output.accept(DISPLAY_PANEL_ITEM.get());
+                output.accept(MARKDOWN_PAD.get());
+            })
             .build()
     );
 
@@ -62,6 +73,12 @@ public final class McDisplaysMod {
         MENU_TYPES.register(modEventBus);
         BLOCK_ENTITY_TYPES.register(modEventBus);
         CREATIVE_TABS.register(modEventBus);
+        modEventBus.addListener(this::registerPayloadHandlers);
         modContainer.registerConfig(ModConfig.Type.SERVER, McDisplaysConfig.SPEC);
+    }
+
+    private void registerPayloadHandlers(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar("1");
+        registrar.playToServer(SaveMarkdownPadPayload.TYPE, SaveMarkdownPadPayload.STREAM_CODEC, SaveMarkdownPadPayload::handle);
     }
 }

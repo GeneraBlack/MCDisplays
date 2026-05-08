@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
@@ -35,7 +36,12 @@ public final class DisplayPanelMenu extends AbstractContainerMenu {
         addSlot(new Slot(blockEntity, SOURCE_SLOT, 80, 20) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return blockEntity.canPlaceItem(getSlotIndex(), stack);
+                return blockEntity.canPlayerEdit(playerInventory.player) && blockEntity.canPlaceItem(getSlotIndex(), stack);
+            }
+
+            @Override
+            public boolean mayPickup(Player player) {
+                return blockEntity.canPlayerEdit(player);
             }
 
             @Override
@@ -61,12 +67,26 @@ public final class DisplayPanelMenu extends AbstractContainerMenu {
 
         ItemStack stack = slot.getItem();
         ItemStack copy = stack.copy();
+        boolean canEdit = blockEntity.canPlayerEdit(player);
 
         if (index == SOURCE_SLOT) {
+            if (!canEdit) {
+                blockEntity.notifyAccessDenied(player);
+                return ItemStack.EMPTY;
+            }
             if (!moveItemStackTo(stack, PLAYER_SLOT_START, HOTBAR_SLOT_END, true)) {
                 return ItemStack.EMPTY;
             }
         } else if (DisplayContentExtractor.supports(stack)) {
+            if (!canEdit) {
+                blockEntity.notifyAccessDenied(player);
+                return ItemStack.EMPTY;
+            }
+
+            if (!player.level().isClientSide) {
+                blockEntity.claimOwnership(player);
+            }
+
             if (!moveItemStackTo(stack, SOURCE_SLOT, SOURCE_SLOT + 1, false)) {
                 return ItemStack.EMPTY;
             }
@@ -85,6 +105,44 @@ public final class DisplayPanelMenu extends AbstractContainerMenu {
         }
 
         return copy;
+    }
+
+    @Override
+    public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        if (slotId == SOURCE_SLOT && !blockEntity.canPlayerEdit(player)) {
+            blockEntity.notifyAccessDenied(player);
+            return;
+        }
+
+        if (clickType == ClickType.QUICK_MOVE && slotId >= PLAYER_SLOT_START && slotId < HOTBAR_SLOT_END && slotId < slots.size()) {
+            Slot slot = slots.get(slotId);
+            if (slot.hasItem() && DisplayContentExtractor.supports(slot.getItem()) && !blockEntity.canPlayerEdit(player)) {
+                blockEntity.notifyAccessDenied(player);
+                return;
+            }
+        }
+
+        if (!player.level().isClientSide && blockEntity.canPlayerEdit(player)) {
+            if (slotId == SOURCE_SLOT) {
+                blockEntity.claimOwnership(player);
+            } else if (clickType == ClickType.QUICK_MOVE && slotId >= PLAYER_SLOT_START && slotId < HOTBAR_SLOT_END && slotId < slots.size()) {
+                Slot slot = slots.get(slotId);
+                if (slot.hasItem() && DisplayContentExtractor.supports(slot.getItem())) {
+                    blockEntity.claimOwnership(player);
+                }
+            }
+        }
+
+        super.clicked(slotId, button, clickType, player);
+    }
+
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (id == 0) {
+            return blockEntity.togglePrivacy(player);
+        }
+
+        return super.clickMenuButton(player, id);
     }
 
     @Override

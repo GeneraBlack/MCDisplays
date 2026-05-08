@@ -9,6 +9,7 @@ import de.gener.mcdisplays.content.DisplayTextLayout;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -24,6 +25,7 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.Container;
 import net.minecraft.world.level.Level;
@@ -38,11 +40,20 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     private static final String TAG_PAGES = "Pages";
     private static final String TAG_TITLE = "Title";
     private static final String TAG_MANUAL_PAGE = "ManualPage";
+    private static final String TAG_OWNER = "Owner";
+    private static final String TAG_OWNER_NAME = "OwnerName";
+    private static final String TAG_PRIVATE = "Private";
+    private static final String TAG_GLOWING = "Glowing";
     private ItemStack sourceStack = ItemStack.EMPTY;
     private List<String> cachedPages = List.of(DisplayDocument.placeholder().pages().getFirst());
     private String cachedTitle = DisplayDocument.placeholder().title();
     private int manualPageOffset;
     private int refreshTicks;
+    @Nullable
+    private UUID ownerUuid;
+    private String ownerName = "";
+    private boolean privateMode;
+    private boolean glowingText;
 
     public DisplayPanelBlockEntity(BlockPos pos, BlockState blockState) {
         super(McDisplaysMod.DISPLAY_PANEL_BLOCK_ENTITY.get(), pos, blockState);
@@ -66,12 +77,53 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
             return false;
         }
 
+        if (!canPlayerEdit(player)) {
+            if (!level.isClientSide) {
+                notifyAccessDenied(player);
+            }
+            return false;
+        }
+
         DisplayPanelBlockEntity target = getOwningEntity();
         if (level.isClientSide) {
             return true;
         }
 
+        claimOwnership(player);
         target.installSource(player, heldStack);
+        return true;
+    }
+
+    public boolean tryApplyInkEffect(Player player, InteractionHand hand) {
+        if (level == null) {
+            return false;
+        }
+
+        ItemStack heldStack = player.getItemInHand(hand);
+        boolean enableGlow = heldStack.is(Items.GLOW_INK_SAC);
+        boolean disableGlow = heldStack.is(Items.INK_SAC);
+        if (!enableGlow && !disableGlow) {
+            return false;
+        }
+
+        if (!canPlayerEdit(player)) {
+            if (!level.isClientSide) {
+                notifyAccessDenied(player);
+            }
+            return true;
+        }
+
+        if (level.isClientSide) {
+            return true;
+        }
+
+        if (!setGlowing(player, enableGlow)) {
+            return true;
+        }
+
+        if (!player.getAbilities().instabuild) {
+            heldStack.shrink(1);
+        }
         return true;
     }
 
@@ -82,6 +134,13 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
 
         DisplayPanelBlockEntity target = getCurrentSourceOwner();
         if (target == null || target.sourceStack.isEmpty()) {
+            return false;
+        }
+
+        if (!canPlayerEdit(player)) {
+            if (!level.isClientSide) {
+                notifyAccessDenied(player);
+            }
             return false;
         }
 
@@ -120,6 +179,13 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
             return false;
         }
 
+        if (!canPlayerEdit(player)) {
+            if (!level.isClientSide) {
+                notifyAccessDenied(player);
+            }
+            return false;
+        }
+
         DisplayCluster.Cluster cluster = DisplayCluster.find(level, worldPosition, getBlockState());
         int pageCount = target.getPageCount(cluster);
         if (pageCount <= 1) {
@@ -145,6 +211,93 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
 
     public List<String> getSlice(DisplayCluster.Cluster cluster) {
         return DisplayTextLayout.slice(getPage(cluster), cluster.width(), cluster.height(), cluster.localX(), cluster.localY());
+    }
+
+    public boolean canPlayerEdit(@Nullable Player player) {
+        if (player == null) {
+            return false;
+        }
+
+        DisplayPanelBlockEntity settingsOwner = getSettingsOwnerOrSelf();
+        return !settingsOwner.privateMode || settingsOwner.isOwnedBy(player);
+    }
+
+    public boolean canPlayerChangePrivacy(@Nullable Player player) {
+        if (player == null) {
+            return false;
+        }
+
+        DisplayPanelBlockEntity settingsOwner = getSettingsOwnerOrSelf();
+        return settingsOwner.ownerUuid == null || settingsOwner.isOwnedBy(player);
+    }
+
+    public boolean isPrivateDisplay() {
+        return getSettingsOwnerOrSelf().privateMode;
+    }
+
+    public boolean isGlowingDisplay() {
+        return getSettingsOwnerOrSelf().glowingText;
+    }
+
+    public Component getOwnerDisplayName() {
+        DisplayPanelBlockEntity settingsOwner = getSettingsOwnerOrSelf();
+        if (settingsOwner.ownerUuid == null) {
+            return Component.translatable("screen.mcdisplays.display_panel.owner.unclaimed_value");
+        }
+
+        return settingsOwner.ownerName.isBlank()
+            ? Component.translatable("screen.mcdisplays.display_panel.owner.unknown_value")
+            : Component.literal(settingsOwner.ownerName);
+    }
+
+    public void claimOwnership(Player player) {
+        if (level == null || level.isClientSide) {
+            return;
+        }
+
+        getSettingsOwnerOrSelf().claimOwnershipInternal(player);
+    }
+
+    public boolean togglePrivacy(Player player) {
+        if (level == null) {
+            return false;
+        }
+
+        if (level.isClientSide) {
+            return true;
+        }
+
+        if (!canPlayerChangePrivacy(player)) {
+            notifyPrivacyDenied(player);
+            return false;
+        }
+
+        DisplayPanelBlockEntity settingsOwner = getSettingsOwnerOrSelf();
+        settingsOwner.claimOwnershipInternal(player);
+        settingsOwner.privateMode = !settingsOwner.privateMode;
+        settingsOwner.markUpdated();
+        player.displayClientMessage(Component.translatable(settingsOwner.privateMode ? "message.mcdisplays.display_panel.private_enabled" : "message.mcdisplays.display_panel.private_disabled"), true);
+        return true;
+    }
+
+    public void notifyAccessDenied(Player player) {
+        if (player.level().isClientSide) {
+            return;
+        }
+
+        player.displayClientMessage(Component.translatable("message.mcdisplays.display_panel.locked", getOwnerDisplayName()), true);
+    }
+
+    private boolean setGlowing(Player player, boolean glowing) {
+        DisplayPanelBlockEntity settingsOwner = getSettingsOwnerOrSelf();
+        if (settingsOwner.glowingText == glowing) {
+            return false;
+        }
+
+        settingsOwner.glowingText = glowing;
+        settingsOwner.markUpdated();
+        player.displayClientMessage(Component.translatable(glowing ? "message.mcdisplays.display_panel.glow_enabled" : "message.mcdisplays.display_panel.glow_disabled"), true);
+        return true;
     }
 
     private int getPageCount(DisplayCluster.Cluster cluster) {
@@ -205,6 +358,11 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
         return currentOwner != null ? currentOwner : this;
     }
 
+    private DisplayPanelBlockEntity getSettingsOwnerOrSelf() {
+        DisplayPanelBlockEntity settingsOwner = getSettingsOwner();
+        return settingsOwner != null ? settingsOwner : this;
+    }
+
     private double horizontalHit(BlockHitResult hit, DisplayCluster.Cluster cluster) {
         BlockPos pos = getBlockPos();
         double deltaX = hit.getLocation().x - (pos.getX() + 0.5D);
@@ -224,8 +382,29 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
 
     @Nullable
     private DisplayPanelBlockEntity getCurrentSourceOwner(DisplayCluster.Cluster cluster) {
+        return getClusterEntities(cluster).stream()
+            .filter(blockEntity -> !blockEntity.sourceStack.isEmpty())
+            .findFirst()
+            .orElse(null);
+    }
+
+    @Nullable
+    private DisplayPanelBlockEntity getSettingsOwner() {
         if (level == null) {
             return null;
+        }
+
+        return getSettingsOwner(DisplayCluster.find(level, worldPosition, getBlockState()));
+    }
+
+    @Nullable
+    private DisplayPanelBlockEntity getSettingsOwner(DisplayCluster.Cluster cluster) {
+        return getClusterEntities(cluster).stream().findFirst().orElse(null);
+    }
+
+    private List<DisplayPanelBlockEntity> getClusterEntities(DisplayCluster.Cluster cluster) {
+        if (level == null) {
+            return List.of();
         }
 
         return cluster.members().stream()
@@ -233,14 +412,39 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
             .map(level::getBlockEntity)
             .filter(DisplayPanelBlockEntity.class::isInstance)
             .map(DisplayPanelBlockEntity.class::cast)
-            .filter(blockEntity -> !blockEntity.sourceStack.isEmpty())
-            .findFirst()
-            .orElse(null);
+            .toList();
     }
 
     private DisplayPanelBlockEntity getDocumentOwner(DisplayCluster.Cluster cluster) {
         DisplayPanelBlockEntity sourceOwner = getCurrentSourceOwner(cluster);
         return sourceOwner != null ? sourceOwner : this;
+    }
+
+    private boolean isOwnedBy(Player player) {
+        return ownerUuid != null && ownerUuid.equals(player.getUUID());
+    }
+
+    private void claimOwnershipInternal(Player player) {
+        String latestName = player.getGameProfile().getName();
+        if (ownerUuid == null) {
+            ownerUuid = player.getUUID();
+            ownerName = latestName;
+            markUpdated();
+            return;
+        }
+
+        if (ownerUuid.equals(player.getUUID()) && !ownerName.equals(latestName)) {
+            ownerName = latestName;
+            markUpdated();
+        }
+    }
+
+    private void notifyPrivacyDenied(Player player) {
+        if (player.level().isClientSide) {
+            return;
+        }
+
+        player.displayClientMessage(Component.translatable("message.mcdisplays.display_panel.owner_only"), true);
     }
 
     private void markUpdated() {
@@ -342,7 +546,7 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
 
     @Override
     public void clearContent() {
-        clearSource();
+        getOwningEntity().clearSource();
     }
 
     @Override
@@ -359,6 +563,18 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
         tag.put(TAG_PAGES, pageList);
         tag.putString(TAG_TITLE, cachedTitle);
         tag.putInt(TAG_MANUAL_PAGE, manualPageOffset);
+        if (ownerUuid != null) {
+            tag.putUUID(TAG_OWNER, ownerUuid);
+        }
+        if (!ownerName.isBlank()) {
+            tag.putString(TAG_OWNER_NAME, ownerName);
+        }
+        if (privateMode) {
+            tag.putBoolean(TAG_PRIVATE, true);
+        }
+        if (glowingText) {
+            tag.putBoolean(TAG_GLOWING, true);
+        }
     }
 
     @Override
@@ -367,6 +583,10 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
         sourceStack = tag.contains(TAG_SOURCE, Tag.TAG_COMPOUND) ? ItemStack.parseOptional(registries, tag.getCompound(TAG_SOURCE)) : ItemStack.EMPTY;
         manualPageOffset = tag.getInt(TAG_MANUAL_PAGE);
         cachedTitle = tag.getString(TAG_TITLE);
+        ownerUuid = tag.hasUUID(TAG_OWNER) ? tag.getUUID(TAG_OWNER) : null;
+        ownerName = tag.getString(TAG_OWNER_NAME);
+        privateMode = tag.getBoolean(TAG_PRIVATE);
+        glowingText = tag.getBoolean(TAG_GLOWING);
 
         List<String> pages = new ArrayList<>();
         ListTag pageList = tag.getList(TAG_PAGES, Tag.TAG_STRING);
