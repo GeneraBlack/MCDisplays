@@ -74,7 +74,7 @@ Repository branding assets for publishing are stored in the branding folder, inc
 The repository includes two GitHub Actions workflows:
 
 - Build workflow: runs on pushes, pull requests, and manual dispatch, then uploads the built jar as an artifact.
-- Publish CurseForge workflow: publishes the mod jar to CurseForge on a pushed version tag, on a published GitHub Release, or via manual dispatch.
+- Publish CurseForge workflow: publishes the mod jar to CurseForge on a pushed version tag or via manual dispatch.
 
 ### Required GitHub configuration
 
@@ -86,7 +86,4 @@ Before the CurseForge workflow can publish anything, configure the following in 
 ### How publishing works
 
 - Tag trigger: push a version tag such as 1.0.0 or v1.0.0 and the workflow uploads the built jar to CurseForge.
-- Release trigger: publish a GitHub Release and the workflow uploads the built jar to CurseForge.
 - Manual trigger: run the Publish CurseForge workflow from the Actions tab and provide an optional version, display name, changelog, and release channel.
-
-For release-triggered uploads, prereleases are published as beta files and normal releases are published as release files.
