@@ -1,0 +1,187 @@
+name: Publish CurseForge
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+'
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish. Leave empty to use the release tag or gradle.properties.
+        required: false
+        type: string
+      version_name:
+        description: Display name on CurseForge. Leave empty to use a generated name.
+        required: false
+        type: string
+      version_type:
+        description: Release channel for manual publishing.
+        required: true
+        default: release
+        type: choice
+        options:
+          - release
+          - beta
+          - alpha
+      changelog:
+        description: Markdown changelog for manual publishing.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: curseforge-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate CurseForge configuration
+        shell: bash
+        env:
+          CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: |
+          if [ -z "$CURSEFORGE_PROJECT_ID" ]; then
+            echo "::error::Missing repository variable CURSEFORGE_PROJECT_ID"
+            exit 1
+          fi
+
+          if [ -z "$CURSEFORGE_TOKEN" ]; then
+            echo "::error::Missing repository secret CURSEFORGE_TOKEN"
+            exit 1
+          fi
+
+      - name: Resolve publish metadata
+        id: meta
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_VERSION_NAME: ${{ github.event.inputs.version_name }}
+          INPUT_VERSION_TYPE: ${{ github.event.inputs.version_type }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          mod_name="$(grep '^mod_name=' gradle.properties | cut -d= -f2-)"
+          mod_version="$(grep '^mod_version=' gradle.properties | cut -d= -f2-)"
+          minecraft_version="$(grep '^minecraft_version=' gradle.properties | cut -d= -f2-)"
+          neo_version="$(grep '^neo_version=' gradle.properties | cut -d= -f2-)"
+
+          publish_version="$INPUT_VERSION"
+          if [ -z "$publish_version" ]; then
+            if [ "$EVENT_NAME" = "release" ] && [ -n "$RELEASE_TAG" ]; then
+              publish_version="$RELEASE_TAG"
+            elif [ "$EVENT_NAME" = "push" ] && [ -n "$REF_NAME" ]; then
+              publish_version="$REF_NAME"
+            else
+              publish_version="$mod_version"
+            fi
+          fi
+
+          publish_name="$INPUT_VERSION_NAME"
+          if [ -z "$publish_name" ]; then
+            publish_name="$mod_name $publish_version for Minecraft $minecraft_version"
+          fi
+
+          publish_type="$INPUT_VERSION_TYPE"
+          if [ "$EVENT_NAME" = "release" ]; then
+            if [ "$RELEASE_PRERELEASE" = "true" ]; then
+              publish_type="beta"
+            else
+              publish_type="release"
+            fi
+          elif [ -z "$publish_type" ]; then
+            publish_type="release"
+          fi
+
+          echo "mod_name=$mod_name" >> "$GITHUB_OUTPUT"
+          echo "minecraft_version=$minecraft_version" >> "$GITHUB_OUTPUT"
+          echo "neo_version=$neo_version" >> "$GITHUB_OUTPUT"
+          echo "publish_version=$publish_version" >> "$GITHUB_OUTPUT"
+          echo "publish_name=$publish_name" >> "$GITHUB_OUTPUT"
+          echo "publish_type=$publish_type" >> "$GITHUB_OUTPUT"
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Prepare changelog
+        id: changelog
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_CHANGELOG: ${{ github.event.inputs.changelog }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          PUBLISH_VERSION: ${{ steps.meta.outputs.publish_version }}
+          MINECRAFT_VERSION: ${{ steps.meta.outputs.minecraft_version }}
+          NEO_VERSION: ${{ steps.meta.outputs.neo_version }}
+        run: |
+          file="build/changelog.md"
+
+          if [ -n "$INPUT_CHANGELOG" ]; then
+            printf '%s\n' "$INPUT_CHANGELOG" > "$file"
+          elif [ "$EVENT_NAME" = "release" ] && [ -n "$RELEASE_BODY" ]; then
+            printf '%s\n' "$RELEASE_BODY" > "$file"
+          else
+            printf 'Automated release for %s.\n\n- Minecraft %s\n- NeoForge %s\n- Built from GitHub Actions\n' "$PUBLISH_VERSION" "$MINECRAFT_VERSION" "$NEO_VERSION" > "$file"
+          fi
+
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to CurseForge
+        id: publish
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: |
+            build/libs/!(*-@(dev|sources|javadoc)).jar
+          name: ${{ steps.meta.outputs.publish_name }}
+          version: ${{ steps.meta.outputs.publish_version }}
+          version-type: ${{ steps.meta.outputs.publish_type }}
+          changelog-file: ${{ steps.changelog.outputs.file }}
+          loaders: |
+            neoforge
+          game-versions: |
+            ${{ steps.meta.outputs.minecraft_version }}
+          game-version-filter: none
+          java: |
+            21
+          retry-attempts: 2
+          retry-delay: 10000
+          fail-mode: fail
+
+      - name: Write workflow summary
+        shell: bash
+        run: |
+          {
+            echo "## CurseForge Publish"
+            echo
+            echo "- Version: ${{ steps.meta.outputs.publish_version }}"
+            echo "- Channel: ${{ steps.meta.outputs.publish_type }}"
+            echo "- Minecraft: ${{ steps.meta.outputs.minecraft_version }}"
+            echo "- URL: ${{ steps.publish.outputs.curseforge-url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
