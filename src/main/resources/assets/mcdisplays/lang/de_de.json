@@ -1,0 +1,16 @@
+{
+  "block.mcdisplays.display_panel": "Displaytafel",
+  "itemGroup.mcdisplays": "MC Displays",
+  "container.mcdisplays.display_panel": "Display-Quelle",
+  "screen.mcdisplays.display_panel.hint": "Lege ein beschriebenes Buch, Buch und Feder, eine MineColonies-Ressourcenrolle oder ein MineColonies-Clipboard in den Slot.",
+  "mcdisplays.configuration.title": "MC Displays Einstellungen",
+  "mcdisplays.configuration.section.display": "Anzeigeeinstellungen",
+  "mcdisplays.configuration.display.refreshIntervalTicks": "Aktualisierungsintervall",
+  "mcdisplays.configuration.display.refreshIntervalTicks.tooltip": "Wie oft MC Displays Buch-, Resource-Scroll- oder Clipboard-Inhalte neu einliest.\n\n20 Ticks = 1 Sekunde.",
+  "mcdisplays.configuration.display.maxDisplayWidth": "Maximale Display-Breite",
+  "mcdisplays.configuration.display.maxDisplayWidth.tooltip": "Maximal erlaubte Breite eines rechteckigen Multiblock-Displays, gemessen in Tafeln.",
+  "mcdisplays.configuration.display.maxDisplayHeight": "Maximale Display-Höhe",
+  "mcdisplays.configuration.display.maxDisplayHeight.tooltip": "Maximal erlaubte Höhe eines rechteckigen Multiblock-Displays, gemessen in Tafeln.",
+  "mcdisplays.configuration.display.allowManualPageTurning": "Manuelles Blättern erlauben",
+  "mcdisplays.configuration.display.allowManualPageTurning.tooltip": "Wenn aktiv, kann mit leerer Haupthand auf dem Display geblättert werden.\n\nRechte Seite vorwärts, linke Seite zurück. Shift-Rechtsklick entfernt weiterhin das Quellitem."
+}

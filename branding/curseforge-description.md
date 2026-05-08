@@ -1,6 +1,8 @@
-# MC Displays
+# Short Description
 
 Turn books and MineColonies logistics into modular wall displays.
+
+# Long Description
 
 MC Displays adds clean, rectangular multiblock display panels for Minecraft 1.21.1 on NeoForge. Build a display wall, insert a supported item, and the screen will render its content directly in the world.
 
@@ -48,23 +50,3 @@ MC Displays includes an in-game configuration screen. You can adjust:
 ## Notes
 
 Clipboard content is generated from live MineColonies request data, so the display reflects the current state of the linked colony instead of a static snapshot.
-
-## Development
-
-Build the mod with:
-
-```bash
-./gradlew build
-```
-
-Start the development client with:
-
-```bash
-./gradlew runClient
-```
-
-For MineColonies integration tests in the dev client, the project includes local runtime dependencies for the MineColonies stack.
-
-## CurseForge Assets
-
-Repository branding assets for publishing are stored in the branding folder, including a 100x100 icon and an English CurseForge description draft.
