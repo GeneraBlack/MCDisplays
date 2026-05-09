@@ -3,7 +3,6 @@
   "item.mcdisplays.markdown_pad": "Markdown-Block",
   "itemGroup.mcdisplays": "MC Displays",
   "container.mcdisplays.display_panel": "Display-Quelle",
-  "screen.mcdisplays.display_panel.hint": "Lege ein beschriebenes Buch, Buch und Feder, einen Markdown-Block, eine MineColonies-Ressourcenrolle oder ein MineColonies-Clipboard in den Slot.",
   "screen.mcdisplays.display_panel.access.public": "Zugriff: Oeffentlich",
   "screen.mcdisplays.display_panel.access.private": "Zugriff: Privat",
   "screen.mcdisplays.display_panel.owner": "Besitzer: %s",

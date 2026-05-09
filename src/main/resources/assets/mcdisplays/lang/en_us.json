@@ -3,7 +3,6 @@
   "item.mcdisplays.markdown_pad": "Markdown Pad",
   "itemGroup.mcdisplays": "MC Displays",
   "container.mcdisplays.display_panel": "Display Source",
-  "screen.mcdisplays.display_panel.hint": "Put a written book, book and quill, Markdown Pad, MineColonies resource scroll, or MineColonies clipboard into the slot.",
   "screen.mcdisplays.display_panel.access.public": "Access: Public",
   "screen.mcdisplays.display_panel.access.private": "Access: Private",
   "screen.mcdisplays.display_panel.owner": "Owner: %s",

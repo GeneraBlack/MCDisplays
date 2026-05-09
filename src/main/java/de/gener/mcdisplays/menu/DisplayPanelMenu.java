@@ -15,6 +15,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 public final class DisplayPanelMenu extends AbstractContainerMenu {
+    public static final int SOURCE_SLOT_X = 14;
+    public static final int SOURCE_SLOT_Y = 79;
+    public static final int PLAYER_INVENTORY_X = 33;
+    public static final int PLAYER_INVENTORY_Y = 114;
+    public static final int HOTBAR_Y = 172;
+    private static final int SLOT_SPACING = 18;
     private static final int SOURCE_SLOT = 0;
     private static final int PLAYER_SLOT_START = 1;
     private static final int PLAYER_SLOT_END = 28;
@@ -33,7 +39,7 @@ public final class DisplayPanelMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
         this.access = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
 
-        addSlot(new Slot(blockEntity, SOURCE_SLOT, 80, 20) {
+        addSlot(new Slot(blockEntity, SOURCE_SLOT, SOURCE_SLOT_X, SOURCE_SLOT_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return blockEntity.canPlayerEdit(playerInventory.player) && blockEntity.canPlaceItem(getSlotIndex(), stack);
@@ -161,14 +167,14 @@ public final class DisplayPanelMenu extends AbstractContainerMenu {
     private void addPlayerInventory(Inventory playerInventory) {
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                addSlot(new Slot(playerInventory, column + row * 9 + 9, 8 + column * 18, 84 + row * 18));
+                addSlot(new Slot(playerInventory, column + row * 9 + 9, PLAYER_INVENTORY_X + column * SLOT_SPACING, PLAYER_INVENTORY_Y + row * SLOT_SPACING));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory playerInventory) {
         for (int slot = 0; slot < 9; slot++) {
-            addSlot(new Slot(playerInventory, slot, 8 + slot * 18, 142));
+            addSlot(new Slot(playerInventory, slot, PLAYER_INVENTORY_X + slot * SLOT_SPACING, HOTBAR_Y));
         }
     }
 }
