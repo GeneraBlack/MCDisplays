@@ -2,12 +2,10 @@ package de.gener.mcdisplays.item;
 
 import de.gener.mcdisplays.content.DisplayDocument;
 import de.gener.mcdisplays.content.MarkdownToDisplayFormatter;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 
 public final class MarkdownPadItemData {
     private static final String ROOT_TAG = "MarkdownPad";
@@ -31,31 +29,33 @@ public final class MarkdownPadItemData {
         String sanitizedTitle = sanitizeTitle(title);
         String sanitizedMarkdown = sanitizeMarkdown(markdown);
 
-        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
-            CompoundTag padTag = tag.contains(ROOT_TAG, Tag.TAG_COMPOUND) ? tag.getCompound(ROOT_TAG) : new CompoundTag();
-            if (sanitizedTitle.isBlank()) {
-                padTag.remove(TAG_TITLE);
-            } else {
-                padTag.putString(TAG_TITLE, sanitizedTitle);
-            }
-
-            if (sanitizedMarkdown.isBlank()) {
-                padTag.remove(TAG_MARKDOWN);
-            } else {
-                padTag.putString(TAG_MARKDOWN, sanitizedMarkdown);
-            }
-
-            if (padTag.isEmpty()) {
-                tag.remove(ROOT_TAG);
-            } else {
-                tag.put(ROOT_TAG, padTag);
-            }
-        });
+        CompoundTag rootTag = stack.hasTag() ? stack.getTag().copy() : new CompoundTag();
+        CompoundTag padTag = rootTag.contains(ROOT_TAG, Tag.TAG_COMPOUND) ? rootTag.getCompound(ROOT_TAG) : new CompoundTag();
 
         if (sanitizedTitle.isBlank()) {
-            stack.remove(DataComponents.CUSTOM_NAME);
+            padTag.remove(TAG_TITLE);
         } else {
-            stack.set(DataComponents.CUSTOM_NAME, Component.literal(sanitizedTitle));
+            padTag.putString(TAG_TITLE, sanitizedTitle);
+        }
+
+        if (sanitizedMarkdown.isBlank()) {
+            padTag.remove(TAG_MARKDOWN);
+        } else {
+            padTag.putString(TAG_MARKDOWN, sanitizedMarkdown);
+        }
+
+        if (padTag.isEmpty()) {
+            rootTag.remove(ROOT_TAG);
+        } else {
+            rootTag.put(ROOT_TAG, padTag);
+        }
+
+        stack.setTag(rootTag.isEmpty() ? null : rootTag);
+
+        if (sanitizedTitle.isBlank()) {
+            stack.resetHoverName();
+        } else {
+            stack.setHoverName(Component.literal(sanitizedTitle));
         }
     }
 
@@ -72,7 +72,10 @@ public final class MarkdownPadItemData {
     }
 
     private static CompoundTag readPadTag(ItemStack stack) {
-        CompoundTag rootTag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        CompoundTag rootTag = stack.getTag();
+        if (rootTag == null) {
+            return new CompoundTag();
+        }
         return rootTag.contains(ROOT_TAG, Tag.TAG_COMPOUND) ? rootTag.getCompound(ROOT_TAG) : new CompoundTag();
     }
 

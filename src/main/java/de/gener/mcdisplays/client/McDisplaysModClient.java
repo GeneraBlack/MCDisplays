@@ -1,27 +1,25 @@
 package de.gener.mcdisplays.client;
 
 import de.gener.mcdisplays.McDisplaysMod;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
-@Mod(value = McDisplaysMod.MODID, dist = net.neoforged.api.distmarker.Dist.CLIENT)
 public final class McDisplaysModClient {
-    public McDisplaysModClient(IEventBus modEventBus, ModContainer modContainer) {
-        modEventBus.addListener(this::registerRenderers);
-        modEventBus.addListener(this::registerMenuScreens);
-        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+    private McDisplaysModClient() {
     }
 
-    private void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+    public static void init(IEventBus modEventBus) {
+        modEventBus.addListener(McDisplaysModClient::registerRenderers);
+        modEventBus.addListener(McDisplaysModClient::onClientSetup);
+    }
+
+    private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(McDisplaysMod.DISPLAY_PANEL_BLOCK_ENTITY.get(), DisplayPanelBlockEntityRenderer::new);
     }
 
-    private void registerMenuScreens(RegisterMenuScreensEvent event) {
-        event.register(McDisplaysMod.DISPLAY_PANEL_MENU.get(), DisplayPanelScreen::new);
+    private static void onClientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> MenuScreens.register(McDisplaysMod.DISPLAY_PANEL_MENU.get(), DisplayPanelScreen::new));
     }
 }

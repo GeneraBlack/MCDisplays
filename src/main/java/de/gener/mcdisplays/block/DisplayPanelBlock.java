@@ -1,13 +1,11 @@
 package de.gener.mcdisplays.block;
 
-import com.mojang.serialization.MapCodec;
 import de.gener.mcdisplays.McDisplaysMod;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -30,7 +28,6 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 public final class DisplayPanelBlock extends BaseEntityBlock implements EntityBlock {
-    private static final MapCodec<DisplayPanelBlock> CODEC = simpleCodec(DisplayPanelBlock::new);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public DisplayPanelBlock() {
@@ -43,34 +40,25 @@ public final class DisplayPanelBlock extends BaseEntityBlock implements EntityBl
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
-
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof DisplayPanelBlockEntity blockEntity)) {
-            return super.useItemOn(stack, state, level, pos, player, hand, hit);
+            return InteractionResult.PASS;
         }
 
-        if (blockEntity.tryApplyInkEffect(player, hand)) {
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
-        }
+        ItemStack stack = player.getItemInHand(hand);
+        if (!stack.isEmpty()) {
+            if (blockEntity.tryApplyInkEffect(player, hand)) {
+                return InteractionResult.sidedSuccess(level.isClientSide);
+            }
 
-        if (blockEntity.tryAcceptSupportedItem(player, hand)) {
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
-        }
+            if (blockEntity.tryAcceptSupportedItem(player, hand)) {
+                return InteractionResult.sidedSuccess(level.isClientSide);
+            }
 
-        if (player.isSecondaryUseActive() && blockEntity.openMenu(player)) {
-            return ItemInteractionResult.sidedSuccess(level.isClientSide);
-        }
+            if (player.isSecondaryUseActive() && blockEntity.openMenu(player)) {
+                return InteractionResult.sidedSuccess(level.isClientSide);
+            }
 
-        return super.useItemOn(stack, state, level, pos, player, hand, hit);
-    }
-
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!(level.getBlockEntity(pos) instanceof DisplayPanelBlockEntity blockEntity)) {
             return InteractionResult.PASS;
         }
 
@@ -121,12 +109,12 @@ public final class DisplayPanelBlock extends BaseEntityBlock implements EntityBl
     }
 
     @Override
-    protected BlockState rotate(BlockState state, Rotation rotation) {
+    public BlockState rotate(BlockState state, Rotation rotation) {
         return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
     }
 
     @Override
-    protected BlockState mirror(BlockState state, Mirror mirror) {
+    public BlockState mirror(BlockState state, Mirror mirror) {
         return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 }

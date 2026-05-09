@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NumericTag;
@@ -21,12 +20,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
 public final class MinecoloniesReflectionCompat {
-    private static final ResourceLocation RESOURCE_SCROLL_ID = ResourceLocation.parse("minecolonies:resourcescroll");
-    private static final ResourceLocation CLIPBOARD_ID = ResourceLocation.parse("minecolonies:clipboard");
+    private static final ResourceLocation RESOURCE_SCROLL_ID = Objects.requireNonNull(ResourceLocation.tryParse("minecolonies:resourcescroll"));
+    private static final ResourceLocation CLIPBOARD_ID = Objects.requireNonNull(ResourceLocation.tryParse("minecolonies:clipboard"));
     private static final String RESOURCE_SCROLL_TITLE = "Resource Scroll";
     private static final String CLIPBOARD_TITLE = "Clipboard";
     private static final String TAG_COLONY = "colony";
@@ -77,7 +75,7 @@ public final class MinecoloniesReflectionCompat {
     }
 
     public static DisplayDocument extractResourceScroll(Level level, ItemStack stack) {
-        CompoundTag data = getItemData(level, stack, RESOURCE_SCROLL_DATA_KEYS);
+        CompoundTag data = getItemData(stack, RESOURCE_SCROLL_DATA_KEYS);
         CompoundTag snapshot = extractWarehouseSnapshot(data);
         int colonyId = data.contains(TAG_COLONY, Tag.TAG_INT) ? data.getInt(TAG_COLONY) : -1;
         BlockPos builderPos = readBlockPos(data, TAG_BUILDER);
@@ -120,7 +118,7 @@ public final class MinecoloniesReflectionCompat {
     }
 
     public static DisplayDocument extractClipboard(Level level, ItemStack stack) {
-        CompoundTag data = getItemData(level, stack, CLIPBOARD_DATA_KEYS);
+        CompoundTag data = getItemData(stack, CLIPBOARD_DATA_KEYS);
         if (!data.contains(TAG_COLONY, Tag.TAG_INT)) {
             return DisplayDocument.message(CLIPBOARD_TITLE, "This clipboard is not linked to a colony.");
         }
@@ -158,8 +156,8 @@ public final class MinecoloniesReflectionCompat {
                 lines.add("");
             }
 
-            while (!lines.isEmpty() && lines.getLast().isBlank()) {
-                lines.removeLast();
+            while (!lines.isEmpty() && lines.get(lines.size() - 1).isBlank()) {
+                lines.remove(lines.size() - 1);
             }
 
             if (lines.size() <= 1) {
@@ -291,10 +289,8 @@ public final class MinecoloniesReflectionCompat {
             return currentLevel;
         }
 
-        ResourceLocation dimensionLocation;
-        try {
-            dimensionLocation = ResourceLocation.parse(dimensionId);
-        } catch (RuntimeException ignored) {
+        ResourceLocation dimensionLocation = ResourceLocation.tryParse(dimensionId);
+        if (dimensionLocation == null) {
             return currentLevel;
         }
 
@@ -370,18 +366,9 @@ public final class MinecoloniesReflectionCompat {
     private static String buildSnapshotKey(ItemStack resourceStack) {
         int hashCode = 0;
 
-        try {
-            if (Boolean.TRUE.equals(invoke(resourceStack, "hasTag"))) {
-                Object tag = invoke(resourceStack, "getTag");
-                if (tag != null) {
-                    hashCode = tag.hashCode();
-                }
-            }
-        } catch (ReflectiveOperationException ignored) {
-            CustomData customData = resourceStack.get(DataComponents.CUSTOM_DATA);
-            if (customData != null) {
-                hashCode = customData.copyTag().hashCode();
-            }
+        CompoundTag tag = resourceStack.getTag();
+        if (tag != null) {
+            hashCode = tag.hashCode();
         }
 
         return resourceStack.getDescriptionId() + "-" + hashCode;
@@ -430,22 +417,14 @@ public final class MinecoloniesReflectionCompat {
         return new DisplayDocument(builderPos != null ? "Builder " + formatCompactBlockPos(builderPos) : RESOURCE_SCROLL_TITLE, toPages(lines, 10));
     }
 
-    private static CompoundTag getItemData(Level level, ItemStack stack, Set<String> expectedKeys) {
+    private static CompoundTag getItemData(ItemStack stack, Set<String> expectedKeys) {
         CompoundTag merged = new CompoundTag();
 
-        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        mergeRelevantData(merged, customData.copyTag(), expectedKeys);
-
-        Object legacyTag = invokeOptional(stack, "getTag");
-        if (legacyTag instanceof CompoundTag compoundTag) {
-            mergeRelevantData(merged, compoundTag, expectedKeys);
+        CompoundTag stackTag = stack.getTag();
+        if (stackTag != null) {
+            mergeRelevantData(merged, stackTag, expectedKeys);
         }
 
-        Tag serializedStack = stack.save(level.registryAccess());
-        if (serializedStack instanceof CompoundTag serializedCompound) {
-            mergeMinecoloniesComponents(merged, serializedCompound, expectedKeys);
-            mergeRelevantData(merged, findRelevantCompound(serializedCompound, expectedKeys), expectedKeys);
-        }
         return merged;
     }
 
@@ -645,8 +624,8 @@ public final class MinecoloniesReflectionCompat {
 
     private static List<String> toPages(List<String> lines, int linesPerPage) {
         List<String> sanitized = new ArrayList<>(lines);
-        while (!sanitized.isEmpty() && sanitized.getLast().isBlank()) {
-            sanitized.removeLast();
+        while (!sanitized.isEmpty() && sanitized.get(sanitized.size() - 1).isBlank()) {
+            sanitized.remove(sanitized.size() - 1);
         }
 
         if (sanitized.isEmpty()) {

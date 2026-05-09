@@ -1,26 +1,26 @@
 package de.gener.mcdisplays;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 public final class McDisplaysConfig {
     private static final String TRANSLATION_PREFIX = McDisplaysMod.MODID + ".configuration";
 
     public static final McDisplaysConfig INSTANCE;
-    public static final ModConfigSpec SPEC;
+    public static final ForgeConfigSpec SPEC;
 
     static {
-        Pair<McDisplaysConfig, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(McDisplaysConfig::new);
+        Pair<McDisplaysConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(McDisplaysConfig::new);
         INSTANCE = specPair.getLeft();
         SPEC = specPair.getRight();
     }
 
-    private final ModConfigSpec.IntValue refreshIntervalTicks;
-    private final ModConfigSpec.IntValue maxDisplayWidth;
-    private final ModConfigSpec.IntValue maxDisplayHeight;
-    private final ModConfigSpec.BooleanValue allowManualPageTurning;
+    private final ForgeConfigSpec.IntValue refreshIntervalTicks;
+    private final ForgeConfigSpec.IntValue maxDisplayWidth;
+    private final ForgeConfigSpec.IntValue maxDisplayHeight;
+    private final ForgeConfigSpec.BooleanValue allowManualPageTurning;
 
-    private McDisplaysConfig(ModConfigSpec.Builder builder) {
+    private McDisplaysConfig(ForgeConfigSpec.Builder builder) {
         builder.comment("Gameplay settings for MC Displays.")
             .translation(TRANSLATION_PREFIX + ".section.display")
             .push("display");
@@ -46,15 +46,15 @@ public final class McDisplaysConfig {
     }
 
     public static int refreshIntervalTicks() {
-        return INSTANCE.refreshIntervalTicks.getAsInt();
+        return INSTANCE.refreshIntervalTicks.get();
     }
 
     public static int maxDisplayWidth() {
-        return INSTANCE.maxDisplayWidth.getAsInt();
+        return INSTANCE.maxDisplayWidth.get();
     }
 
     public static int maxDisplayHeight() {
-        return INSTANCE.maxDisplayHeight.getAsInt();
+        return INSTANCE.maxDisplayHeight.get();
     }
 
     public static boolean allowManualPageTurning() {

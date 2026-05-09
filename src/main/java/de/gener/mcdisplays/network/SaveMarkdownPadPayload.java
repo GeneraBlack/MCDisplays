@@ -2,38 +2,36 @@ package de.gener.mcdisplays.network;
 
 import de.gener.mcdisplays.McDisplaysMod;
 import de.gener.mcdisplays.item.MarkdownPadItemData;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import java.util.function.Supplier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkEvent;
 
-public record SaveMarkdownPadPayload(boolean mainHand, String title, String markdown) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SaveMarkdownPadPayload> TYPE = new CustomPacketPayload.Type<>(
-        ResourceLocation.fromNamespaceAndPath(McDisplaysMod.MODID, "save_markdown_pad")
-    );
-    public static final StreamCodec<RegistryFriendlyByteBuf, SaveMarkdownPadPayload> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.BOOL,
-        SaveMarkdownPadPayload::mainHand,
-        ByteBufCodecs.STRING_UTF8,
-        SaveMarkdownPadPayload::title,
-        ByteBufCodecs.STRING_UTF8,
-        SaveMarkdownPadPayload::markdown,
-        SaveMarkdownPadPayload::new
-    );
-
-    @Override
-    public Type<SaveMarkdownPadPayload> type() {
-        return TYPE;
+public record SaveMarkdownPadPayload(boolean mainHand, String title, String markdown) {
+    public static void encode(SaveMarkdownPadPayload payload, FriendlyByteBuf buffer) {
+        buffer.writeBoolean(payload.mainHand());
+        buffer.writeUtf(payload.title(), MarkdownPadItemData.maxTitleLength());
+        buffer.writeUtf(payload.markdown(), MarkdownPadItemData.maxMarkdownLength());
     }
 
-    public static void handle(SaveMarkdownPadPayload payload, IPayloadContext context) {
+    public static SaveMarkdownPadPayload decode(FriendlyByteBuf buffer) {
+        return new SaveMarkdownPadPayload(
+            buffer.readBoolean(),
+            buffer.readUtf(MarkdownPadItemData.maxTitleLength()),
+            buffer.readUtf(MarkdownPadItemData.maxMarkdownLength())
+        );
+    }
+
+    public static void handle(SaveMarkdownPadPayload payload, Supplier<NetworkEvent.Context> contextSupplier) {
+        NetworkEvent.Context context = contextSupplier.get();
         context.enqueueWork(() -> {
-            Player player = context.player();
+            Player player = context.getSender();
+            if (player == null) {
+                return;
+            }
+
             InteractionHand hand = payload.mainHand ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
             ItemStack stack = player.getItemInHand(hand);
             if (!stack.is(McDisplaysMod.MARKDOWN_PAD.get())) {
@@ -44,5 +42,6 @@ public record SaveMarkdownPadPayload(boolean mainHand, String title, String mark
             player.getInventory().setChanged();
             player.containerMenu.broadcastChanges();
         });
+        context.setPacketHandled(true);
     }
 }

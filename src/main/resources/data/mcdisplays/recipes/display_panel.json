@@ -20,7 +20,7 @@
     }
   },
   "result": {
-    "id": "mcdisplays:display_panel",
+    "item": "mcdisplays:display_panel",
     "count": 4
   }
 }

@@ -2,7 +2,7 @@
 
 Turn books, Markdown notes, and MineColonies logistics into modular wall displays.
 
-MC Displays adds clean, rectangular multiblock display panels for Minecraft 1.21.1 on NeoForge. Build a display wall, insert a supported item, and the screen will render its content directly in the world.
+MC Displays adds clean, rectangular multiblock display panels for Minecraft 1.20.1 on Forge. Build a display wall, insert a supported item, and the screen will render its content directly in the world.
 
 The mod is designed for practical survival use as well as colony management. Vanilla books work out of the box, the Markdown Pad lets players author custom screen content in-game, and MineColonies integration lets you surface builder resource lists and clipboard request data on large wall-mounted panels.
 
@@ -82,7 +82,7 @@ For details, examples, and current limitations, see [docs/markdown-support.md](d
 
 ## Configuration
 
-MC Displays includes an in-game configuration screen. You can adjust:
+MC Displays stores its settings in the Forge server config. You can adjust:
 
 - Refresh interval
 - Maximum display width
@@ -91,9 +91,10 @@ MC Displays includes an in-game configuration screen. You can adjust:
 
 ## Compatibility
 
-- Minecraft 1.21.1
-- NeoForge 21.1.218
+- Minecraft 1.20.1
+- Forge 47.4.20
 - MineColonies support is optional, but required for Resource Scroll and Clipboard displays.
+- The backport reads the legacy MineColonies 1.20.1 item data format used by the older resource scroll and clipboard items.
 
 ## Notes
 
@@ -115,7 +116,7 @@ Start the development client with:
 ./gradlew runClient
 ```
 
-For MineColonies integration tests in the dev client, the project includes local runtime dependencies for the MineColonies stack.
+For MineColonies integration tests in the dev client, the project includes local runtime dependencies for the 1.20.1 MineColonies stack.
 
 ## CurseForge Assets
 

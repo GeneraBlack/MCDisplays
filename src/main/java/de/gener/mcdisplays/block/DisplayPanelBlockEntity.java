@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
@@ -33,6 +33,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.network.NetworkHooks;
 import de.gener.mcdisplays.menu.DisplayPanelMenu;
 
 public final class DisplayPanelBlockEntity extends BlockEntity implements Container, MenuProvider {
@@ -45,7 +46,7 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     private static final String TAG_PRIVATE = "Private";
     private static final String TAG_GLOWING = "Glowing";
     private ItemStack sourceStack = ItemStack.EMPTY;
-    private List<String> cachedPages = List.of(DisplayDocument.placeholder().pages().getFirst());
+    private List<String> cachedPages = List.of(DisplayDocument.placeholder().pages().get(0));
     private String cachedTitle = DisplayDocument.placeholder().title();
     private int manualPageOffset;
     private int refreshTicks;
@@ -165,7 +166,11 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
             return true;
         }
 
-        player.openMenu(this, worldPosition);
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return false;
+        }
+
+        NetworkHooks.openScreen(serverPlayer, this, worldPosition);
         return true;
     }
 
@@ -550,10 +555,10 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         if (!sourceStack.isEmpty()) {
-            tag.put(TAG_SOURCE, sourceStack.save(registries));
+            tag.put(TAG_SOURCE, sourceStack.save(new CompoundTag()));
         }
 
         ListTag pageList = new ListTag();
@@ -578,9 +583,9 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        sourceStack = tag.contains(TAG_SOURCE, Tag.TAG_COMPOUND) ? ItemStack.parseOptional(registries, tag.getCompound(TAG_SOURCE)) : ItemStack.EMPTY;
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        sourceStack = tag.contains(TAG_SOURCE, Tag.TAG_COMPOUND) ? ItemStack.of(tag.getCompound(TAG_SOURCE)) : ItemStack.EMPTY;
         manualPageOffset = tag.getInt(TAG_MANUAL_PAGE);
         cachedTitle = tag.getString(TAG_TITLE);
         ownerUuid = tag.hasUUID(TAG_OWNER) ? tag.getUUID(TAG_OWNER) : null;
@@ -609,8 +614,8 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveWithoutMetadata(registries);
+    public CompoundTag getUpdateTag() {
+        return saveWithoutMetadata();
     }
 
     @Nullable

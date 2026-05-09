@@ -6,6 +6,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.network.chat.Component;
@@ -13,7 +14,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 
 public final class DisplayRichText {
-    private static final ResourceLocation UNIFORM_FONT = ResourceLocation.parse("minecraft:uniform");
+    private static final ResourceLocation UNIFORM_FONT = Objects.requireNonNull(ResourceLocation.tryParse("minecraft:uniform"));
     private static final Pattern RGB_COLOR_PATTERN = Pattern.compile("^rgb\\s*\\(\\s*(\\d{1,3})\\s*,\\s*(\\d{1,3})\\s*,\\s*(\\d{1,3})\\s*\\)$");
     private static final Map<String, Integer> COLOR_TAGS = Map.ofEntries(
         Map.entry("black", 0x000000),
@@ -240,7 +241,7 @@ public final class DisplayRichText {
             }
 
             if (usedCharacters > 0) {
-                StyleState separatorState = currentLine.getLast().style();
+                StyleState separatorState = currentLine.get(currentLine.size() - 1).style();
                 currentLine.add(new StyledCharacter(' ', separatorState));
             }
             currentLine.addAll(word);
@@ -428,7 +429,7 @@ public final class DisplayRichText {
 
         List<StyledRun> runs = new ArrayList<>();
         StringBuilder builder = new StringBuilder();
-        StyleState currentState = characters.getFirst().style();
+        StyleState currentState = characters.get(0).style();
 
         for (StyledCharacter character : characters) {
             if (!currentState.equals(character.style())) {

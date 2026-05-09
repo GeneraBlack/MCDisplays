@@ -209,7 +209,7 @@ public final class MarkdownToDisplayFormatter {
         int[] widths = computeColumnWidths(rows, columnCount);
 
         List<String> renderedLines = new ArrayList<>();
-        renderedLines.add(renderTableRow(rows.getFirst(), widths, alignments));
+        renderedLines.add(renderTableRow(rows.get(0), widths, alignments));
         renderedLines.add(renderTableSeparator(widths, alignments));
         for (int index = 1; index < rows.size(); index++) {
             renderedLines.add(renderTableRow(rows.get(index), widths, alignments));
@@ -373,12 +373,12 @@ public final class MarkdownToDisplayFormatter {
     }
 
     private static void trimBlankEdges(List<String> lines) {
-        while (!lines.isEmpty() && lines.getFirst().isBlank()) {
-            lines.removeFirst();
+        while (!lines.isEmpty() && lines.get(0).isBlank()) {
+            lines.remove(0);
         }
 
-        while (!lines.isEmpty() && lines.getLast().isBlank()) {
-            lines.removeLast();
+        while (!lines.isEmpty() && lines.get(lines.size() - 1).isBlank()) {
+            lines.remove(lines.size() - 1);
         }
     }
 

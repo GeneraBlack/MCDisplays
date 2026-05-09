@@ -46,10 +46,10 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Setup JDK 21
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Setup Gradle
@@ -84,7 +84,7 @@ jobs:
           mod_name="$(grep '^mod_name=' gradle.properties | cut -d= -f2-)"
           mod_version="$(grep '^mod_version=' gradle.properties | cut -d= -f2-)"
           minecraft_version="$(grep '^minecraft_version=' gradle.properties | cut -d= -f2-)"
-          neo_version="$(grep '^neo_version=' gradle.properties | cut -d= -f2-)"
+          forge_version="$(grep '^forge_version=' gradle.properties | cut -d= -f2-)"
 
           publish_version="$INPUT_VERSION"
           if [ -z "$publish_version" ]; then
@@ -107,7 +107,7 @@ jobs:
 
           echo "mod_name=$mod_name" >> "$GITHUB_OUTPUT"
           echo "minecraft_version=$minecraft_version" >> "$GITHUB_OUTPUT"
-          echo "neo_version=$neo_version" >> "$GITHUB_OUTPUT"
+          echo "forge_version=$forge_version" >> "$GITHUB_OUTPUT"
           echo "publish_version=$publish_version" >> "$GITHUB_OUTPUT"
           echo "publish_name=$publish_name" >> "$GITHUB_OUTPUT"
           echo "publish_type=$publish_type" >> "$GITHUB_OUTPUT"
@@ -122,14 +122,14 @@ jobs:
           INPUT_CHANGELOG: ${{ github.event.inputs.changelog }}
           PUBLISH_VERSION: ${{ steps.meta.outputs.publish_version }}
           MINECRAFT_VERSION: ${{ steps.meta.outputs.minecraft_version }}
-          NEO_VERSION: ${{ steps.meta.outputs.neo_version }}
+          FORGE_VERSION: ${{ steps.meta.outputs.forge_version }}
         run: |
           file="build/changelog.md"
 
           if [ -n "$INPUT_CHANGELOG" ]; then
             printf '%s\n' "$INPUT_CHANGELOG" > "$file"
           else
-            printf 'Automated release for %s.\n\n- Minecraft %s\n- NeoForge %s\n- Built from GitHub Actions\n' "$PUBLISH_VERSION" "$MINECRAFT_VERSION" "$NEO_VERSION" > "$file"
+            printf 'Automated release for %s.\n\n- Minecraft %s\n- Forge %s\n- Built from GitHub Actions\n' "$PUBLISH_VERSION" "$MINECRAFT_VERSION" "$FORGE_VERSION" > "$file"
           fi
 
           echo "file=$file" >> "$GITHUB_OUTPUT"
@@ -147,12 +147,12 @@ jobs:
           version-type: ${{ steps.meta.outputs.publish_type }}
           changelog-file: ${{ steps.changelog.outputs.file }}
           loaders: |
-            neoforge
+            forge
           game-versions: |
             ${{ steps.meta.outputs.minecraft_version }}
           game-version-filter: none
           java: |
-            21
+            17
           retry-attempts: 2
           retry-delay: 10000
           fail-mode: fail

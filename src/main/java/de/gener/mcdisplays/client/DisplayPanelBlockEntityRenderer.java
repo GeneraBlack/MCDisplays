@@ -7,6 +7,7 @@ import de.gener.mcdisplays.block.DisplayPanelBlock;
 import de.gener.mcdisplays.block.DisplayPanelBlockEntity;
 import de.gener.mcdisplays.content.DisplayCluster;
 import de.gener.mcdisplays.content.DisplayRichText;
+import java.util.Objects;
 import java.util.List;
 import net.minecraft.client.gui.Font;
 import net.minecraft.util.FormattedCharSequence;
@@ -29,7 +30,7 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
     private static final float TEXT_SCALE_MAX = 0.0125F;
     private static final float TEXT_HORIZONTAL_MARGIN = 0.0625F;
     private static final float TEXT_VERTICAL_MARGIN = 0.0625F;
-    private static final ResourceLocation UNIFORM_FONT = ResourceLocation.parse("minecraft:uniform");
+    private static final ResourceLocation UNIFORM_FONT = Objects.requireNonNull(ResourceLocation.tryParse("minecraft:uniform"));
 
     private final Font font;
 

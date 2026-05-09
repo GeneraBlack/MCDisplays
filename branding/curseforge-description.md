@@ -4,7 +4,7 @@ Turn books, Markdown notes, and MineColonies logistics into modular multiblock w
 
 # Long Description
 
-MC Displays adds clean, rectangular multiblock display panels for Minecraft 1.21.1 on NeoForge. Build a display wall, insert a supported item, and the screen will render its content directly in the world.
+MC Displays adds clean, rectangular multiblock display panels for Minecraft 1.20.1 on Forge. Build a display wall, insert a supported item, and the screen will render its content directly in the world.
 
 The mod is designed for practical survival use as well as colony management. Vanilla books work out of the box, the Markdown Pad lets players write custom screen content in-game, and optional MineColonies integration lets you surface builder resource lists and clipboard request data on large wall-mounted panels.
 
@@ -17,7 +17,7 @@ The mod is designed for practical survival use as well as colony management. Van
 - Turn pages manually with an empty hand when enabled.
 - Protect displays with ownership and private mode.
 - Illuminate displays with Glow Ink Sacs for bright text, outline rendering, and a visible lit frame.
-- Configure refresh interval and maximum display size in-game.
+- Configure refresh interval and maximum display size through the Forge server config.
 - Keep colony and builder links separated from item data, which is especially useful on multiplayer servers with multiple colonies.
 
 ## Markdown Pad
@@ -51,6 +51,7 @@ This makes the Markdown Pad useful for signs, dashboards, colony planning boards
 - Refresh live colony information instead of relying on stale snapshots.
 
 MineColonies support is optional, but required for Resource Scroll and Clipboard displays.
+The backport reads the legacy MineColonies 1.20.1 item data format used by older resource scroll and clipboard items.
 
 ## Controls
 
@@ -68,8 +69,8 @@ MineColonies support is optional, but required for Resource Scroll and Clipboard
 
 ## Compatibility
 
-- Minecraft 1.21.1
-- NeoForge 21.1.218
+- Minecraft 1.20.1
+- Forge 47.4.20
 
 ## Notes
 

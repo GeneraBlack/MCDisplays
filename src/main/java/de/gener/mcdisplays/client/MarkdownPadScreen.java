@@ -1,11 +1,13 @@
 package de.gener.mcdisplays.client;
 
+import de.gener.mcdisplays.McDisplaysMod;
 import de.gener.mcdisplays.content.DisplayDocument;
 import de.gener.mcdisplays.content.DisplayRichText;
 import de.gener.mcdisplays.content.DisplayTextLayout;
 import de.gener.mcdisplays.content.MarkdownToDisplayFormatter;
 import de.gener.mcdisplays.item.MarkdownPadItemData;
 import de.gener.mcdisplays.network.SaveMarkdownPadPayload;
+import java.util.Objects;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -19,7 +21,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 
 public final class MarkdownPadScreen extends Screen {
-    private static final ResourceLocation UNIFORM_FONT = ResourceLocation.parse("minecraft:uniform");
+    private static final ResourceLocation UNIFORM_FONT = Objects.requireNonNull(ResourceLocation.tryParse("minecraft:uniform"));
     private static final int SCREEN_WIDTH = 420;
     private static final int SCREEN_HEIGHT = 244;
     private static final int PREVIEW_BLOCKS_WIDE = 2;
@@ -99,7 +101,7 @@ public final class MarkdownPadScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        renderBackground(guiGraphics);
         guiGraphics.fill(left, top, left + SCREEN_WIDTH, top + SCREEN_HEIGHT, 0xF01F1A22);
         guiGraphics.fill(left + 6, top + 6, left + SCREEN_WIDTH - 6, top + 46, 0xCC3A3342);
         guiGraphics.fill(left + 236, top + 28, left + SCREEN_WIDTH - 16, top + 168, 0xCC17131C);
@@ -169,8 +171,8 @@ public final class MarkdownPadScreen extends Screen {
     }
 
     private void saveAndClose() {
-        if (minecraft != null && minecraft.getConnection() != null) {
-            minecraft.getConnection().send(new SaveMarkdownPadPayload(hand == InteractionHand.MAIN_HAND, titleBox.getValue(), markdownBox.getValue()));
+        if (minecraft != null && minecraft.player != null) {
+            McDisplaysMod.NETWORK.sendToServer(new SaveMarkdownPadPayload(hand == InteractionHand.MAIN_HAND, titleBox.getValue(), markdownBox.getValue()));
         }
         onClose();
     }
