@@ -263,12 +263,38 @@ public final class MinecoloniesReflectionCompat {
         }
     }
 
-    private static Object resolveColony(Level level, CompoundTag data, int colonyId) throws ReflectiveOperationException {
+    static Object resolveColony(Level level, CompoundTag data, int colonyId) throws ReflectiveOperationException {
         Level linkedLevel = resolveLinkedLevel(level, data);
         if (linkedLevel == null) {
             return null;
         }
 
+        return resolveColonyInLevel(linkedLevel, colonyId);
+    }
+
+    static Object resolveColonyById(Level level, int colonyId, @javax.annotation.Nullable String dimension) throws ReflectiveOperationException {
+        Level linkedLevel = level;
+        if (dimension != null && !dimension.isBlank()) {
+            ResourceLocation dimLocation = ResourceLocation.tryParse(dimension);
+            if (dimLocation != null && !Objects.equals(level.dimension().location(), dimLocation)) {
+                if (level.getServer() != null) {
+                    ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimLocation);
+                    Level resolved = level.getServer().getLevel(levelKey);
+                    if (resolved != null) {
+                        linkedLevel = resolved;
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        return resolveColonyInLevel(linkedLevel, colonyId);
+    }
+
+    private static Object resolveColonyInLevel(Level linkedLevel, int colonyId) throws ReflectiveOperationException {
         Class<?> colonyManagerClass = Class.forName("com.minecolonies.api.colony.IColonyManager");
         Object colonyManager = colonyManagerClass.getMethod("getInstance").invoke(null);
 
@@ -611,7 +637,7 @@ public final class MinecoloniesReflectionCompat {
         return title == null || title.isBlank() ? fallback : title;
     }
 
-    private static String cleanText(String text) {
+    static String cleanText(String text) {
         return DisplayContentExtractor.clean(text == null ? "" : text).trim();
     }
 
@@ -622,7 +648,7 @@ public final class MinecoloniesReflectionCompat {
         return 0;
     }
 
-    private static List<String> toPages(List<String> lines, int linesPerPage) {
+    static List<String> toPages(List<String> lines, int linesPerPage) {
         List<String> sanitized = new ArrayList<>(lines);
         while (!sanitized.isEmpty() && sanitized.get(sanitized.size() - 1).isBlank()) {
             sanitized.remove(sanitized.size() - 1);
@@ -640,14 +666,14 @@ public final class MinecoloniesReflectionCompat {
         return pages;
     }
 
-    private static String componentToString(Object object) {
+    static String componentToString(Object object) {
         if (object instanceof Component component) {
             return DisplayContentExtractor.clean(component.getString());
         }
         return DisplayContentExtractor.clean(String.valueOf(object));
     }
 
-    private static Collection<?> asCollection(Object value) {
+    static Collection<?> asCollection(Object value) {
         if (value instanceof Map<?, ?> map) {
             return map.values();
         }
@@ -664,7 +690,7 @@ public final class MinecoloniesReflectionCompat {
         return Map.of();
     }
 
-    private static Object invokeOptional(Object target, String methodName, Object... arguments) {
+    static Object invokeOptional(Object target, String methodName, Object... arguments) {
         if (target == null) {
             return null;
         }
@@ -676,7 +702,7 @@ public final class MinecoloniesReflectionCompat {
         }
     }
 
-    private static Object invoke(Object target, String methodName, Object... arguments) throws ReflectiveOperationException {
+    static Object invoke(Object target, String methodName, Object... arguments) throws ReflectiveOperationException {
         Method method = findMethod(target.getClass(), methodName, arguments);
         return method.invoke(target, arguments);
     }

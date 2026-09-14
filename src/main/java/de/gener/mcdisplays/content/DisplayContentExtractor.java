@@ -28,6 +28,10 @@ public final class DisplayContentExtractor {
             return true;
         }
 
+        if (stack.is(McDisplaysMod.COLONY_DASHBOARD.get())) {
+            return true;
+        }
+
         if (stack.is(Items.WRITTEN_BOOK) || stack.is(Items.WRITABLE_BOOK)) {
             return true;
         }
@@ -43,6 +47,10 @@ public final class DisplayContentExtractor {
 
         if (stack.is(McDisplaysMod.MARKDOWN_PAD.get())) {
             return MarkdownPadItemData.toDisplayDocument(stack);
+        }
+
+        if (stack.is(McDisplaysMod.COLONY_DASHBOARD.get())) {
+            return ColonyDashboardExtractor.extract(level, stack);
         }
 
         if (stack.is(Items.WRITTEN_BOOK)) {

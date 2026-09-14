@@ -39,5 +39,20 @@
   "mcdisplays.configuration.display.maxDisplayHeight": "Maximum display height",
   "mcdisplays.configuration.display.maxDisplayHeight.tooltip": "Maximum allowed height for one rectangular multiblock display, measured in panels.",
   "mcdisplays.configuration.display.allowManualPageTurning": "Allow manual page turning",
-  "mcdisplays.configuration.display.allowManualPageTurning.tooltip": "If enabled, an empty main hand can turn pages on a display.\n\nRight side advances, left side goes back. Sneak-right-click still removes the source item."
+  "mcdisplays.configuration.display.allowManualPageTurning.tooltip": "If enabled, an empty main hand can turn pages on a display.\n\nRight side advances, left side goes back. Sneak-right-click still removes the source item.",
+  "item.mcdisplays.colony_dashboard": "Colony Dashboard",
+  "item.mcdisplays.colony_dashboard.mode.citizens": "Citizens",
+  "item.mcdisplays.colony_dashboard.mode.builders": "Builders",
+  "item.mcdisplays.colony_dashboard.mode.sick": "Sick",
+  "item.mcdisplays.colony_dashboard.mode.deaths": "Deaths",
+  "item.mcdisplays.colony_dashboard.mode.statistics": "Statistics",
+  "item.mcdisplays.colony_dashboard.mode.warehouse": "Warehouse",
+  "item.mcdisplays.colony_dashboard.tooltip.mode": "Mode: %s",
+  "item.mcdisplays.colony_dashboard.tooltip.colony": "Colony #%d",
+  "item.mcdisplays.colony_dashboard.tooltip.unlinked": "Not linked to a colony",
+  "item.mcdisplays.colony_dashboard.tooltip.hint": "Sneak-click a building to link. Right-click to cycle mode.",
+  "message.mcdisplays.colony_dashboard.mode_changed": "Dashboard mode: %s",
+  "message.mcdisplays.colony_dashboard.linked": "Linked to colony: %s",
+  "message.mcdisplays.colony_dashboard.no_colony": "No colony found at this location.",
+  "message.mcdisplays.colony_dashboard.link_failed": "Failed to link to colony."
 }

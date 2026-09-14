@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import de.gener.mcdisplays.block.DisplayPanelBlock;
 import de.gener.mcdisplays.block.DisplayPanelBlockEntity;
 import de.gener.mcdisplays.client.McDisplaysModClient;
+import de.gener.mcdisplays.item.ColonyDashboardItem;
 import de.gener.mcdisplays.item.MarkdownPadItem;
 import de.gener.mcdisplays.menu.DisplayPanelMenu;
 import de.gener.mcdisplays.network.SaveMarkdownPadPayload;
@@ -61,6 +62,10 @@ public final class McDisplaysMod {
         "markdown_pad",
         MarkdownPadItem::new
     );
+    public static final RegistryObject<ColonyDashboardItem> COLONY_DASHBOARD = ITEMS.register(
+        "colony_dashboard",
+        ColonyDashboardItem::new
+    );
     public static final RegistryObject<BlockEntityType<DisplayPanelBlockEntity>> DISPLAY_PANEL_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
         "display_panel",
         () -> BlockEntityType.Builder.of(DisplayPanelBlockEntity::new, DISPLAY_PANEL.get()).build(null)
@@ -77,6 +82,7 @@ public final class McDisplaysMod {
             .displayItems((parameters, output) -> {
                 output.accept(DISPLAY_PANEL_ITEM.get());
                 output.accept(MARKDOWN_PAD.get());
+                output.accept(COLONY_DASHBOARD.get());
             })
             .build()
     );

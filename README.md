@@ -4,12 +4,12 @@ Turn books, Markdown notes, and MineColonies logistics into modular wall display
 
 MC Displays adds clean, rectangular multiblock display panels for Minecraft 1.20.1 on Forge. Build a display wall, insert a supported item, and the screen will render its content directly in the world.
 
-The mod is designed for practical survival use as well as colony management. Vanilla books work out of the box, the Markdown Pad lets players author custom screen content in-game, and MineColonies integration lets you surface builder resource lists and clipboard request data on large wall-mounted panels.
+The mod is designed for practical survival use as well as colony management. Vanilla books work out of the box, the Markdown Pad lets players author custom screen content in-game, and MineColonies integration lets you surface builder resource lists, clipboard request data, and a full Colony Dashboard with live citizen, builder, health, death, statistics, and warehouse data on large wall-mounted panels.
 
 ## Highlights
 
 - Build rectangular multiblock display walls from individual display panels.
-- Show written books, books and quills, Markdown Pads, MineColonies Resource Scrolls, and MineColonies Clipboards directly in the world.
+- Show written books, books and quills, Markdown Pads, MineColonies Resource Scrolls, MineColonies Clipboards, and the Colony Dashboard directly in the world.
 - Render formatted Markdown with headings, lists, task lists, blockquotes, tables, inline code, fenced code blocks, and links converted into readable display text.
 - Use color tags such as [red], [blue], [color=#ff8800], or [#55ff55] inside Markdown Pad content.
 - Refresh live content automatically on a configurable interval.
@@ -25,6 +25,8 @@ The mod is designed for practical survival use as well as colony management. Van
 - Create custom display content with the Markdown Pad item and its live preview editor.
 - Display MineColonies Resource Scroll data.
 - Display MineColonies Clipboard request data.
+- Display live colony data with the Colony Dashboard item, including six views: Citizens, Builders, Sick, Deaths, Statistics, and Warehouse.
+- Link the Colony Dashboard to a colony by sneak-right-clicking any MineColonies building. Cycle display modes with a right-click.
 - Render richer formatting for Markdown Pad content, including colors and structured blocks.
 - Refresh content automatically on a configurable interval.
 - Turn pages manually with an empty hand when enabled.
@@ -49,6 +51,7 @@ The mod is designed for practical survival use as well as colony management. Van
 - Markdown Pad
 - MineColonies Resource Scroll
 - MineColonies Clipboard
+- Colony Dashboard (Citizens, Builders, Sick, Deaths, Statistics, Warehouse)
 
 ## Markdown Support
 
@@ -93,7 +96,7 @@ MC Displays stores its settings in the Forge server config. You can adjust:
 
 - Minecraft 1.20.1
 - Forge 47.4.20
-- MineColonies support is optional, but required for Resource Scroll and Clipboard displays.
+- MineColonies support is optional, but required for Resource Scroll, Clipboard, and Colony Dashboard displays.
 - The backport reads the legacy MineColonies 1.20.1 item data format used by the older resource scroll and clipboard items.
 
 ## Notes
