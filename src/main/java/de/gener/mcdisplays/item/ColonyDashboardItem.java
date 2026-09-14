@@ -1,15 +1,18 @@
 package de.gener.mcdisplays.item;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import de.gener.mcdisplays.McDisplaysMod;
+import io.netty.buffer.ByteBuf;
 import java.lang.reflect.Method;
 import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -25,15 +28,26 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * A colony-linked item that displays live MineColonies data on display panels.
  * <p>
- * The item stores a colony ID, dimension, and display mode in its NBT. Players
+ * The item stores a colony ID, dimension, and display mode in its data component. Players
  * link it to a colony by sneak-right-clicking a MineColonies building (Town Hall
  * or any hut), and cycle through modes by right-clicking in hand. Insert into a
  * display panel to render the selected view in the world.
  */
 public class ColonyDashboardItem extends Item {
-    private static final String TAG_COLONY = "colony";
-    private static final String TAG_DIMENSION = "dimension";
-    private static final String TAG_MODE = "mode";
+    public record ColonyDashboardData(int colonyId, String dimension, String mode) {
+        public static final ColonyDashboardData EMPTY = new ColonyDashboardData(-1, "", DashboardMode.CITIZENS.id());
+        public static final Codec<ColonyDashboardData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.INT.optionalFieldOf("colony", -1).forGetter(ColonyDashboardData::colonyId),
+            Codec.STRING.optionalFieldOf("dimension", "").forGetter(ColonyDashboardData::dimension),
+            Codec.STRING.optionalFieldOf("mode", DashboardMode.CITIZENS.id()).forGetter(ColonyDashboardData::mode)
+        ).apply(instance, ColonyDashboardData::new));
+        public static final StreamCodec<ByteBuf, ColonyDashboardData> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, ColonyDashboardData::colonyId,
+            ByteBufCodecs.STRING_UTF8, ColonyDashboardData::dimension,
+            ByteBufCodecs.STRING_UTF8, ColonyDashboardData::mode,
+            ColonyDashboardData::new
+        );
+    }
 
     public ColonyDashboardItem() {
         super(new Item.Properties().stacksTo(1));
@@ -78,16 +92,15 @@ public class ColonyDashboardItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         DashboardMode mode = getMode(stack);
         tooltip.add(Component.translatable("item.mcdisplays.colony_dashboard.tooltip.mode",
             Component.translatable("item.mcdisplays.colony_dashboard.mode." + mode.id()))
             .withStyle(ChatFormatting.GRAY));
 
-        CompoundTag tag = stack.getTag();
-        if (tag != null && tag.contains(TAG_COLONY, Tag.TAG_INT)) {
-            int colonyId = tag.getInt(TAG_COLONY);
-            tooltip.add(Component.translatable("item.mcdisplays.colony_dashboard.tooltip.colony", colonyId)
+        ColonyDashboardData data = stack.getOrDefault(McDisplaysMod.COLONY_DASHBOARD_DATA.get(), ColonyDashboardData.EMPTY);
+        if (data.colonyId() != -1) {
+            tooltip.add(Component.translatable("item.mcdisplays.colony_dashboard.tooltip.colony", data.colonyId())
                 .withStyle(ChatFormatting.GRAY));
         } else {
             tooltip.add(Component.translatable("item.mcdisplays.colony_dashboard.tooltip.unlinked")
@@ -101,35 +114,27 @@ public class ColonyDashboardItem extends Item {
     // ---- static accessors for extraction ----
 
     public static DashboardMode getMode(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        if (tag == null || !tag.contains(TAG_MODE, Tag.TAG_STRING)) {
-            return DashboardMode.CITIZENS;
-        }
-        return DashboardMode.fromId(tag.getString(TAG_MODE));
+        ColonyDashboardData data = stack.getOrDefault(McDisplaysMod.COLONY_DASHBOARD_DATA.get(), ColonyDashboardData.EMPTY);
+        return DashboardMode.fromId(data.mode());
     }
 
     public static int getColonyId(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        if (tag == null || !tag.contains(TAG_COLONY, Tag.TAG_INT)) {
-            return -1;
-        }
-        return tag.getInt(TAG_COLONY);
+        ColonyDashboardData data = stack.getOrDefault(McDisplaysMod.COLONY_DASHBOARD_DATA.get(), ColonyDashboardData.EMPTY);
+        return data.colonyId();
     }
 
     @Nullable
     public static String getDimension(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        if (tag == null || !tag.contains(TAG_DIMENSION, Tag.TAG_STRING)) {
-            return null;
-        }
-        String dimension = tag.getString(TAG_DIMENSION);
+        ColonyDashboardData data = stack.getOrDefault(McDisplaysMod.COLONY_DASHBOARD_DATA.get(), ColonyDashboardData.EMPTY);
+        String dimension = data.dimension();
         return dimension.isBlank() ? null : dimension;
     }
 
     // ---- internal helpers ----
 
     private static void setMode(ItemStack stack, DashboardMode mode) {
-        stack.getOrCreateTag().putString(TAG_MODE, mode.id());
+        ColonyDashboardData oldData = stack.getOrDefault(McDisplaysMod.COLONY_DASHBOARD_DATA.get(), ColonyDashboardData.EMPTY);
+        stack.set(McDisplaysMod.COLONY_DASHBOARD_DATA.get(), new ColonyDashboardData(oldData.colonyId(), oldData.dimension(), mode.id()));
     }
 
     private void linkToColony(Player player, ItemStack stack, Level level, BlockPos pos) {
@@ -149,9 +154,8 @@ public class ColonyDashboardItem extends Item {
             Object colonyId = findAndInvoke(colony, "getID");
             Object colonyName = findAndInvoke(colony, "getName");
 
-            CompoundTag tag = stack.getOrCreateTag();
-            tag.putInt(TAG_COLONY, ((Number) colonyId).intValue());
-            tag.putString(TAG_DIMENSION, level.dimension().location().toString());
+            ColonyDashboardData oldData = stack.getOrDefault(McDisplaysMod.COLONY_DASHBOARD_DATA.get(), ColonyDashboardData.EMPTY);
+            stack.set(McDisplaysMod.COLONY_DASHBOARD_DATA.get(), new ColonyDashboardData(((Number) colonyId).intValue(), level.dimension().location().toString(), oldData.mode()));
 
             player.displayClientMessage(
                 Component.translatable("message.mcdisplays.colony_dashboard.linked", String.valueOf(colonyName)),

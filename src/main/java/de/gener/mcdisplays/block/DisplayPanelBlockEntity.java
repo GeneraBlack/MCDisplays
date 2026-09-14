@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -33,7 +34,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
 import de.gener.mcdisplays.menu.DisplayPanelMenu;
 
 public final class DisplayPanelBlockEntity extends BlockEntity implements Container, MenuProvider {
@@ -170,7 +170,7 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
             return false;
         }
 
-        NetworkHooks.openScreen(serverPlayer, this, worldPosition);
+        serverPlayer.openMenu(this, worldPosition);
         return true;
     }
 
@@ -555,10 +555,10 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
         if (!sourceStack.isEmpty()) {
-            tag.put(TAG_SOURCE, sourceStack.save(new CompoundTag()));
+            tag.put(TAG_SOURCE, sourceStack.saveOptional(registries));
         }
 
         ListTag pageList = new ListTag();
@@ -583,9 +583,9 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        sourceStack = tag.contains(TAG_SOURCE, Tag.TAG_COMPOUND) ? ItemStack.of(tag.getCompound(TAG_SOURCE)) : ItemStack.EMPTY;
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        sourceStack = tag.contains(TAG_SOURCE, Tag.TAG_COMPOUND) ? ItemStack.parseOptional(registries, tag.getCompound(TAG_SOURCE)) : ItemStack.EMPTY;
         manualPageOffset = tag.getInt(TAG_MANUAL_PAGE);
         cachedTitle = tag.getString(TAG_TITLE);
         ownerUuid = tag.hasUUID(TAG_OWNER) ? tag.getUUID(TAG_OWNER) : null;
@@ -614,8 +614,10 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        saveAdditional(tag, registries);
+        return tag;
     }
 
     @Nullable

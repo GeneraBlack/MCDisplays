@@ -1,61 +1,59 @@
 package de.gener.mcdisplays.item;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import de.gener.mcdisplays.McDisplaysMod;
 import de.gener.mcdisplays.content.DisplayDocument;
 import de.gener.mcdisplays.content.MarkdownToDisplayFormatter;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 
 public final class MarkdownPadItemData {
-    private static final String ROOT_TAG = "MarkdownPad";
-    private static final String TAG_TITLE = "Title";
-    private static final String TAG_MARKDOWN = "Markdown";
     private static final int MAX_TITLE_LENGTH = 64;
     private static final int MAX_MARKDOWN_LENGTH = 12000;
+
+    public record MarkdownPadData(String title, String markdown) {
+        public static final MarkdownPadData EMPTY = new MarkdownPadData("", "");
+        public static final Codec<MarkdownPadData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.optionalFieldOf("title", "").forGetter(MarkdownPadData::title),
+            Codec.STRING.optionalFieldOf("markdown", "").forGetter(MarkdownPadData::markdown)
+        ).apply(instance, MarkdownPadData::new));
+        public static final StreamCodec<ByteBuf, MarkdownPadData> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.STRING_UTF8, MarkdownPadData::title,
+            ByteBufCodecs.STRING_UTF8, MarkdownPadData::markdown,
+            MarkdownPadData::new
+        );
+    }
 
     private MarkdownPadItemData() {
     }
 
     public static String getTitle(ItemStack stack) {
-        return readPadTag(stack).getString(TAG_TITLE).trim();
+        return stack.getOrDefault(McDisplaysMod.MARKDOWN_PAD_DATA.get(), MarkdownPadData.EMPTY).title().trim();
     }
 
     public static String getMarkdown(ItemStack stack) {
-        return normalizeMarkdown(readPadTag(stack).getString(TAG_MARKDOWN));
+        return normalizeMarkdown(stack.getOrDefault(McDisplaysMod.MARKDOWN_PAD_DATA.get(), MarkdownPadData.EMPTY).markdown());
     }
 
     public static void write(ItemStack stack, String title, String markdown) {
         String sanitizedTitle = sanitizeTitle(title);
         String sanitizedMarkdown = sanitizeMarkdown(markdown);
 
-        CompoundTag rootTag = stack.hasTag() ? stack.getTag().copy() : new CompoundTag();
-        CompoundTag padTag = rootTag.contains(ROOT_TAG, Tag.TAG_COMPOUND) ? rootTag.getCompound(ROOT_TAG) : new CompoundTag();
+        if (sanitizedTitle.isBlank() && sanitizedMarkdown.isBlank()) {
+            stack.remove(McDisplaysMod.MARKDOWN_PAD_DATA.get());
+        } else {
+            stack.set(McDisplaysMod.MARKDOWN_PAD_DATA.get(), new MarkdownPadData(sanitizedTitle, sanitizedMarkdown));
+        }
 
         if (sanitizedTitle.isBlank()) {
-            padTag.remove(TAG_TITLE);
+            stack.remove(DataComponents.CUSTOM_NAME);
         } else {
-            padTag.putString(TAG_TITLE, sanitizedTitle);
-        }
-
-        if (sanitizedMarkdown.isBlank()) {
-            padTag.remove(TAG_MARKDOWN);
-        } else {
-            padTag.putString(TAG_MARKDOWN, sanitizedMarkdown);
-        }
-
-        if (padTag.isEmpty()) {
-            rootTag.remove(ROOT_TAG);
-        } else {
-            rootTag.put(ROOT_TAG, padTag);
-        }
-
-        stack.setTag(rootTag.isEmpty() ? null : rootTag);
-
-        if (sanitizedTitle.isBlank()) {
-            stack.resetHoverName();
-        } else {
-            stack.setHoverName(Component.literal(sanitizedTitle));
+            stack.set(DataComponents.CUSTOM_NAME, Component.literal(sanitizedTitle));
         }
     }
 
@@ -69,14 +67,6 @@ public final class MarkdownPadItemData {
 
     public static int maxMarkdownLength() {
         return MAX_MARKDOWN_LENGTH;
-    }
-
-    private static CompoundTag readPadTag(ItemStack stack) {
-        CompoundTag rootTag = stack.getTag();
-        if (rootTag == null) {
-            return new CompoundTag();
-        }
-        return rootTag.contains(ROOT_TAG, Tag.TAG_COMPOUND) ? rootTag.getCompound(ROOT_TAG) : new CompoundTag();
     }
 
     private static String sanitizeTitle(String title) {

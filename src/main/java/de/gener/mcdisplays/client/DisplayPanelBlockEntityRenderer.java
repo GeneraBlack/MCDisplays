@@ -30,7 +30,7 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
     private static final float TEXT_SCALE_MAX = 0.0125F;
     private static final float TEXT_HORIZONTAL_MARGIN = 0.0625F;
     private static final float TEXT_VERTICAL_MARGIN = 0.0625F;
-    private static final ResourceLocation UNIFORM_FONT = Objects.requireNonNull(ResourceLocation.tryParse("minecraft:uniform"));
+    private static final ResourceLocation UNIFORM_FONT = ResourceLocation.withDefaultNamespace("uniform");
 
     private final Font font;
 

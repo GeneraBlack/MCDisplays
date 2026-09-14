@@ -14,7 +14,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 
 public final class DisplayRichText {
-    private static final ResourceLocation UNIFORM_FONT = Objects.requireNonNull(ResourceLocation.tryParse("minecraft:uniform"));
+    private static final ResourceLocation UNIFORM_FONT = Objects.requireNonNull(ResourceLocation.withDefaultNamespace("uniform"));
     private static final Pattern RGB_COLOR_PATTERN = Pattern.compile("^rgb\\s*\\(\\s*(\\d{1,3})\\s*,\\s*(\\d{1,3})\\s*,\\s*(\\d{1,3})\\s*\\)$");
     private static final Map<String, Integer> COLOR_TAGS = Map.ofEntries(
         Map.entry("black", 0x000000),

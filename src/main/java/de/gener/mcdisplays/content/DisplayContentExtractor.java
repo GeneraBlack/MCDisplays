@@ -6,14 +6,15 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.item.component.WrittenBookContent;
+import net.minecraft.world.item.component.WritableBookContent;
+import net.minecraft.server.network.Filterable;
+import net.minecraft.core.component.DataComponents;
 
 public final class DisplayContentExtractor {
     private DisplayContentExtractor() {
@@ -75,13 +76,20 @@ public final class DisplayContentExtractor {
     }
 
     private static DisplayDocument extractBook(ItemStack stack, boolean writtenBook) {
-        CompoundTag tag = stack.getTag();
         List<String> flattenedPages = new ArrayList<>();
-        if (tag != null && tag.contains("pages", Tag.TAG_LIST)) {
-            ListTag pages = tag.getList("pages", Tag.TAG_STRING);
-            for (int index = 0; index < pages.size(); index++) {
-                String page = pages.getString(index);
-                flattenedPages.add(writtenBook ? parseWrittenPage(page) : clean(page));
+        if (writtenBook) {
+            WrittenBookContent content = stack.get(DataComponents.WRITTEN_BOOK_CONTENT);
+            if (content != null) {
+                for (Filterable<Component> page : content.pages()) {
+                    flattenedPages.add(page.raw().getString());
+                }
+            }
+        } else {
+            WritableBookContent content = stack.get(DataComponents.WRITABLE_BOOK_CONTENT);
+            if (content != null) {
+                for (Filterable<String> page : content.pages()) {
+                    flattenedPages.add(page.raw());
+                }
             }
         }
 
@@ -90,19 +98,6 @@ public final class DisplayContentExtractor {
         }
 
         return new DisplayDocument(clean(stack.getHoverName().getString()), flattenedPages);
-    }
-
-    private static String parseWrittenPage(String rawPage) {
-        try {
-            Component component = Component.Serializer.fromJson(rawPage);
-            if (component != null) {
-                return clean(component.getString());
-            }
-        } catch (Exception ignored) {
-            // Older or malformed written book pages can still fall back to plain text.
-        }
-
-        return clean(rawPage);
     }
 
     static String clean(String text) {

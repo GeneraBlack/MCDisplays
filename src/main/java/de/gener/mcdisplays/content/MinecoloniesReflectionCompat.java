@@ -21,10 +21,12 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.core.component.DataComponents;
 
 public final class MinecoloniesReflectionCompat {
-    private static final ResourceLocation RESOURCE_SCROLL_ID = Objects.requireNonNull(ResourceLocation.tryParse("minecolonies:resourcescroll"));
-    private static final ResourceLocation CLIPBOARD_ID = Objects.requireNonNull(ResourceLocation.tryParse("minecolonies:clipboard"));
+    private static final ResourceLocation RESOURCE_SCROLL_ID = Objects.requireNonNull(ResourceLocation.fromNamespaceAndPath("minecolonies", "resourcescroll"));
+    private static final ResourceLocation CLIPBOARD_ID = Objects.requireNonNull(ResourceLocation.fromNamespaceAndPath("minecolonies", "clipboard"));
     private static final String RESOURCE_SCROLL_TITLE = "Resource Scroll";
     private static final String CLIPBOARD_TITLE = "Clipboard";
     private static final String TAG_COLONY = "colony";
@@ -275,7 +277,7 @@ public final class MinecoloniesReflectionCompat {
     static Object resolveColonyById(Level level, int colonyId, @javax.annotation.Nullable String dimension) throws ReflectiveOperationException {
         Level linkedLevel = level;
         if (dimension != null && !dimension.isBlank()) {
-            ResourceLocation dimLocation = ResourceLocation.tryParse(dimension);
+            ResourceLocation dimLocation = ResourceLocation.parse(dimension);
             if (dimLocation != null && !Objects.equals(level.dimension().location(), dimLocation)) {
                 if (level.getServer() != null) {
                     ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimLocation);
@@ -315,7 +317,7 @@ public final class MinecoloniesReflectionCompat {
             return currentLevel;
         }
 
-        ResourceLocation dimensionLocation = ResourceLocation.tryParse(dimensionId);
+        ResourceLocation dimensionLocation = ResourceLocation.parse(dimensionId);
         if (dimensionLocation == null) {
             return currentLevel;
         }
@@ -390,12 +392,7 @@ public final class MinecoloniesReflectionCompat {
     }
 
     private static String buildSnapshotKey(ItemStack resourceStack) {
-        int hashCode = 0;
-
-        CompoundTag tag = resourceStack.getTag();
-        if (tag != null) {
-            hashCode = tag.hashCode();
-        }
+        int hashCode = resourceStack.getComponents().hashCode();
 
         return resourceStack.getDescriptionId() + "-" + hashCode;
     }
@@ -446,7 +443,7 @@ public final class MinecoloniesReflectionCompat {
     private static CompoundTag getItemData(ItemStack stack, Set<String> expectedKeys) {
         CompoundTag merged = new CompoundTag();
 
-        CompoundTag stackTag = stack.getTag();
+        CompoundTag stackTag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         if (stackTag != null) {
             mergeRelevantData(merged, stackTag, expectedKeys);
         }

@@ -1,26 +1,26 @@
 package de.gener.mcdisplays;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 public final class McDisplaysConfig {
     private static final String TRANSLATION_PREFIX = McDisplaysMod.MODID + ".configuration";
 
     public static final McDisplaysConfig INSTANCE;
-    public static final ForgeConfigSpec SPEC;
+    public static final ModConfigSpec SPEC;
 
     static {
-        Pair<McDisplaysConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(McDisplaysConfig::new);
+        Pair<McDisplaysConfig, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(McDisplaysConfig::new);
         INSTANCE = specPair.getLeft();
         SPEC = specPair.getRight();
     }
 
-    private final ForgeConfigSpec.IntValue refreshIntervalTicks;
-    private final ForgeConfigSpec.IntValue maxDisplayWidth;
-    private final ForgeConfigSpec.IntValue maxDisplayHeight;
-    private final ForgeConfigSpec.BooleanValue allowManualPageTurning;
+    private final ModConfigSpec.IntValue refreshIntervalTicks;
+    private final ModConfigSpec.IntValue maxDisplayWidth;
+    private final ModConfigSpec.IntValue maxDisplayHeight;
+    private final ModConfigSpec.BooleanValue allowManualPageTurning;
 
-    private McDisplaysConfig(ForgeConfigSpec.Builder builder) {
+    private McDisplaysConfig(ModConfigSpec.Builder builder) {
         builder.comment("Gameplay settings for MC Displays.")
             .translation(TRANSLATION_PREFIX + ".section.display")
             .push("display");
