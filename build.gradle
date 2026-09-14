@@ -71,7 +71,6 @@ dependencies {
     localRuntime "com.ldtteam:minecolonies:${project.minecolonies_version}"
     localRuntime "com.ldtteam:structurize:${project.structurize_version}"
     localRuntime "com.ldtteam:blockui:${project.blockui_version}"
-    localRuntime "com.ldtteam:domum_ornamentum:${project.domum_ornamentum_version}"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
