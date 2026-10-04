@@ -22,7 +22,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 public final class MinecoloniesReflectionCompat {
     private static final ResourceLocation RESOURCE_SCROLL_ID = Objects.requireNonNull(ResourceLocation.fromNamespaceAndPath("minecolonies", "resourcescroll"));
@@ -77,7 +79,7 @@ public final class MinecoloniesReflectionCompat {
     }
 
     public static DisplayDocument extractResourceScroll(Level level, ItemStack stack) {
-        CompoundTag data = getItemData(stack, RESOURCE_SCROLL_DATA_KEYS);
+        CompoundTag data = getItemData(level, stack, RESOURCE_SCROLL_DATA_KEYS);
         CompoundTag snapshot = extractWarehouseSnapshot(data);
         int colonyId = data.contains(TAG_COLONY, Tag.TAG_INT) ? data.getInt(TAG_COLONY) : -1;
         BlockPos builderPos = readBlockPos(data, TAG_BUILDER);
@@ -120,7 +122,7 @@ public final class MinecoloniesReflectionCompat {
     }
 
     public static DisplayDocument extractClipboard(Level level, ItemStack stack) {
-        CompoundTag data = getItemData(stack, CLIPBOARD_DATA_KEYS);
+        CompoundTag data = getItemData(level, stack, CLIPBOARD_DATA_KEYS);
         if (!data.contains(TAG_COLONY, Tag.TAG_INT)) {
             return DisplayDocument.message(CLIPBOARD_TITLE, "This clipboard is not linked to a colony.");
         }
@@ -384,16 +386,28 @@ public final class MinecoloniesReflectionCompat {
     }
 
     private static long readWarehouseCount(CompoundTag snapshot, ItemStack resourceStack) {
-        String snapshotKey = buildSnapshotKey(resourceStack);
-        if (!snapshot.contains(snapshotKey)) {
-            return 0L;
+        String patchKey = buildSnapshotKey(resourceStack);
+        if (snapshot.contains(patchKey)) {
+            return extractNumber(snapshot.get(patchKey));
         }
-        return extractNumber(snapshot.get(snapshotKey));
+
+        String legacyKey = resourceStack.getDescriptionId() + "-" + resourceStack.getComponents().hashCode();
+        if (snapshot.contains(legacyKey)) {
+            return extractNumber(snapshot.get(legacyKey));
+        }
+
+        String prefix = resourceStack.getDescriptionId() + "-";
+        for (String key : snapshot.getAllKeys()) {
+            if (key.startsWith(prefix)) {
+                return extractNumber(snapshot.get(key));
+            }
+        }
+
+        return 0L;
     }
 
     private static String buildSnapshotKey(ItemStack resourceStack) {
-        int hashCode = resourceStack.getComponents().hashCode();
-
+        int hashCode = resourceStack.getComponentsPatch().hashCode();
         return resourceStack.getDescriptionId() + "-" + hashCode;
     }
 
@@ -440,15 +454,91 @@ public final class MinecoloniesReflectionCompat {
         return new DisplayDocument(builderPos != null ? "Builder " + formatCompactBlockPos(builderPos) : RESOURCE_SCROLL_TITLE, toPages(lines, 10));
     }
 
-    private static CompoundTag getItemData(ItemStack stack, Set<String> expectedKeys) {
+    private static CompoundTag getItemData(Level level, ItemStack stack, Set<String> expectedKeys) {
         CompoundTag merged = new CompoundTag();
 
+        extractFromComponents(merged, stack, expectedKeys);
+
+        if (level != null) {
+            try {
+                Tag serialized = stack.saveOptional(level.registryAccess());
+                if (serialized instanceof CompoundTag serializedCompound) {
+                    mergeMinecoloniesComponents(merged, serializedCompound, expectedKeys);
+                    mergeRelevantData(merged, findRelevantCompound(serializedCompound, expectedKeys), expectedKeys);
+                }
+            } catch (Exception exception) {
+                McDisplaysMod.LOGGER.debug("Failed to serialize item stack for component extraction", exception);
+            }
+        }
+
         CompoundTag stackTag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-        if (stackTag != null) {
+        if (stackTag != null && !stackTag.isEmpty()) {
             mergeRelevantData(merged, stackTag, expectedKeys);
         }
 
         return merged;
+    }
+
+    private static void extractFromComponents(CompoundTag target, ItemStack stack, Set<String> expectedKeys) {
+        try {
+            if (expectedKeys.contains(TAG_COLONY)) {
+                DataComponentType<?> colonyCompType = BuiltInRegistries.DATA_COMPONENT_TYPE.get(ResourceLocation.fromNamespaceAndPath("minecolonies", "colony_id"));
+                if (colonyCompType != null && stack.has(colonyCompType)) {
+                    Object colonyIdObj = stack.get(colonyCompType);
+                    if (colonyIdObj != null) {
+                        Object idVal = invokeOptional(colonyIdObj, "id");
+                        if (idVal instanceof Number num && num.intValue() >= 0) {
+                            target.putInt(TAG_COLONY, num.intValue());
+                        }
+                        Object dimVal = invokeOptional(colonyIdObj, "dimension");
+                        if (dimVal instanceof ResourceKey<?> key) {
+                            target.putString(TAG_DIMENSION, key.location().toString());
+                        } else if (dimVal != null) {
+                            Object locVal = invokeOptional(dimVal, "location");
+                            if (locVal != null) {
+                                target.putString(TAG_DIMENSION, locVal.toString());
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (expectedKeys.contains(TAG_BUILDER)) {
+                DataComponentType<?> buildingCompType = BuiltInRegistries.DATA_COMPONENT_TYPE.get(ResourceLocation.fromNamespaceAndPath("minecolonies", "building_id"));
+                if (buildingCompType != null && stack.has(buildingCompType)) {
+                    Object buildingIdObj = stack.get(buildingCompType);
+                    if (buildingIdObj != null) {
+                        Object posVal = invokeOptional(buildingIdObj, "id");
+                        if (posVal instanceof BlockPos pos) {
+                            CompoundTag builderTag = new CompoundTag();
+                            builderTag.putInt("x", pos.getX());
+                            builderTag.putInt("y", pos.getY());
+                            builderTag.putInt("z", pos.getZ());
+                            target.put(TAG_BUILDER, builderTag);
+                        }
+                    }
+                }
+            }
+
+            if (expectedKeys.contains(TAG_WAREHOUSE_SNAPSHOT)) {
+                DataComponentType<?> snapshotCompType = BuiltInRegistries.DATA_COMPONENT_TYPE.get(ResourceLocation.fromNamespaceAndPath("minecolonies", "warehouse_snapshot"));
+                if (snapshotCompType != null && stack.has(snapshotCompType)) {
+                    Object snapshotObj = stack.get(snapshotCompType);
+                    if (snapshotObj != null) {
+                        Object mapVal = invokeOptional(snapshotObj, "snapshot");
+                        if (mapVal instanceof Map<?, ?> map && !map.isEmpty()) {
+                            CompoundTag snapshotTag = new CompoundTag();
+                            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                                snapshotTag.putInt(String.valueOf(entry.getKey()), asInt(entry.getValue()));
+                            }
+                            target.put(TAG_WAREHOUSE_SNAPSHOT, snapshotTag);
+                        }
+                    }
+                }
+            }
+        } catch (Exception exception) {
+            McDisplaysMod.LOGGER.debug("Failed direct component reflection on item stack", exception);
+        }
     }
 
     private static void mergeMinecoloniesComponents(CompoundTag target, CompoundTag serializedStack, Set<String> expectedKeys) {
@@ -460,7 +550,7 @@ public final class MinecoloniesReflectionCompat {
 
         if (expectedKeys.contains(TAG_COLONY) && components.contains(COMPONENT_COLONY_ID, Tag.TAG_COMPOUND)) {
             CompoundTag colonyComponent = components.getCompound(COMPONENT_COLONY_ID);
-            if (colonyComponent.contains(TAG_ID, Tag.TAG_INT)) {
+            if (colonyComponent.contains(TAG_ID, Tag.TAG_ANY_NUMERIC)) {
                 target.putInt(TAG_COLONY, colonyComponent.getInt(TAG_ID));
             }
             if (colonyComponent.contains(TAG_DIMENSION, Tag.TAG_STRING)) {
@@ -470,12 +560,12 @@ public final class MinecoloniesReflectionCompat {
 
         if (expectedKeys.contains(TAG_BUILDER) && components.contains(COMPONENT_BUILDING_ID, Tag.TAG_COMPOUND)) {
             CompoundTag buildingComponent = components.getCompound(COMPONENT_BUILDING_ID);
-            int[] coordinates = buildingComponent.getIntArray(TAG_ID);
-            if (coordinates.length >= 3) {
+            BlockPos pos = readBlockPosFromComponent(buildingComponent);
+            if (pos != null) {
                 CompoundTag builderTag = new CompoundTag();
-                builderTag.putInt("x", coordinates[0]);
-                builderTag.putInt("y", coordinates[1]);
-                builderTag.putInt("z", coordinates[2]);
+                builderTag.putInt("x", pos.getX());
+                builderTag.putInt("y", pos.getY());
+                builderTag.putInt("z", pos.getZ());
                 target.put(TAG_BUILDER, builderTag);
             }
         }
@@ -484,8 +574,35 @@ public final class MinecoloniesReflectionCompat {
             CompoundTag snapshotComponent = components.getCompound(COMPONENT_WAREHOUSE_SNAPSHOT);
             if (snapshotComponent.contains(TAG_SNAPSHOT, Tag.TAG_COMPOUND)) {
                 target.put(TAG_WAREHOUSE_SNAPSHOT, snapshotComponent.getCompound(TAG_SNAPSHOT).copy());
+            } else if (snapshotComponent.contains("version", Tag.TAG_COMPOUND)) {
+                target.put(TAG_WAREHOUSE_SNAPSHOT, snapshotComponent.getCompound("version").copy());
             }
         }
+    }
+
+    private static BlockPos readBlockPosFromComponent(CompoundTag buildingComponent) {
+        if (buildingComponent.contains(TAG_ID, Tag.TAG_INT_ARRAY)) {
+            int[] coordinates = buildingComponent.getIntArray(TAG_ID);
+            if (coordinates.length >= 3) {
+                return new BlockPos(coordinates[0], coordinates[1], coordinates[2]);
+            }
+        }
+        if (buildingComponent.contains(TAG_ID, Tag.TAG_LIST)) {
+            net.minecraft.nbt.ListTag list = buildingComponent.getList(TAG_ID, Tag.TAG_INT);
+            if (list.size() >= 3) {
+                return new BlockPos(list.getInt(0), list.getInt(1), list.getInt(2));
+            }
+        }
+        if (buildingComponent.contains(TAG_ID, Tag.TAG_COMPOUND)) {
+            CompoundTag posTag = buildingComponent.getCompound(TAG_ID);
+            if (posTag.contains("x") && posTag.contains("y") && posTag.contains("z")) {
+                return new BlockPos(posTag.getInt("x"), posTag.getInt("y"), posTag.getInt("z"));
+            }
+        }
+        if (buildingComponent.contains("x") && buildingComponent.contains("y") && buildingComponent.contains("z")) {
+            return new BlockPos(buildingComponent.getInt("x"), buildingComponent.getInt("y"), buildingComponent.getInt("z"));
+        }
+        return null;
     }
 
     private static void mergeRelevantData(CompoundTag target, CompoundTag candidate, Set<String> expectedKeys) {
