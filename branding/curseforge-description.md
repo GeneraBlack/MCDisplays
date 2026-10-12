@@ -22,6 +22,16 @@ The mod is designed for practical survival use as well as colony management. Van
 - Configure refresh interval and maximum display size through the server config.
 - Keep colony and builder links separated from item data, which is especially useful on multiplayer servers with multiple colonies.
 
+## Cinema Projector & Video Streaming
+
+Build real movie theaters and media lounges in Minecraft:
+
+- **Cinema Projector Block:** Stream online videos and streams onto any size modular screen cluster.
+- **Cinema Remote Control:** Bind a screen to a projector with a simple right-click link.
+- **Powered by WATERMeDIA:** Play direct MP4, WebM, HLS (`.m3u8`), Twitch, Kick, and YouTube (with the WATERMeDIA YouTube addon).
+- **Spatial Cinema Acoustics:** Realistic 3D distance falloff, live volume (0–100%) and range (8–128m) adjustments, and toggleable sound origin (Projector block or Screen wall).
+- **Modern 480x320 GUI:** Live status badges, clipboard paste button, quick-clear, and diagnostics.
+
 ## Colony Dashboard
 
 The Colony Dashboard is a dedicated item for displaying live MineColonies colony data on your display walls. It offers six switchable views:

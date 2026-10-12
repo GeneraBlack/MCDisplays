@@ -1,4 +1,4 @@
-name: Publish CurseForge
+name: Publish Release (CurseForge & GitHub)
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
         required: false
         type: string
       version_name:
-        description: Display name on CurseForge. Leave empty to use a generated name.
+        description: Display name on CurseForge & GitHub. Leave empty to use a generated name.
         required: false
         type: string
       version_type:
@@ -31,7 +31,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: curseforge-publish-${{ github.ref }}
@@ -129,11 +129,25 @@ jobs:
 
           if [ -n "$INPUT_CHANGELOG" ]; then
             printf '%s\n' "$INPUT_CHANGELOG" > "$file"
+          elif [ -f "CHANGELOG.md" ]; then
+            cat CHANGELOG.md > "$file"
           else
             printf 'Automated release for %s.\n\n- Minecraft %s\n- NeoForge %s\n- Built from GitHub Actions\n' "$PUBLISH_VERSION" "$MINECRAFT_VERSION" "$NEO_VERSION" > "$file"
           fi
 
           echo "file=$file" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        id: github_release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          name: ${{ steps.meta.outputs.publish_name }}
+          body_path: ${{ steps.changelog.outputs.file }}
+          files: |
+            build/libs/!(*-@(dev|sources|javadoc)).jar
+          draft: false
+          prerelease: ${{ steps.meta.outputs.publish_type != 'release' }}
 
       - name: Publish to CurseForge
         id: publish
@@ -162,10 +176,10 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## CurseForge Publish"
+            echo "## Release Summary"
             echo
             echo "- Version: ${{ steps.meta.outputs.publish_version }}"
             echo "- Channel: ${{ steps.meta.outputs.publish_type }}"
             echo "- Minecraft: ${{ steps.meta.outputs.minecraft_version }}"
-            echo "- URL: ${{ steps.publish.outputs.curseforge-url }}"
+            echo "- CurseForge URL: ${{ steps.publish.outputs.curseforge-url }}"
           } >> "$GITHUB_STEP_SUMMARY"

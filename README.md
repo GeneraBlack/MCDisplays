@@ -44,6 +44,17 @@ The mod is designed for practical survival use as well as colony management. Van
 - With an empty hand, use the display to turn pages if manual page turning is enabled.
 - Sneak-right-click with an empty hand to remove the current source item.
 
+## Cinema Projector & Video Streaming
+
+Stream YouTube, Twitch, Kick, and direct video files onto large modular display screens (e.g. 16x9 theater walls):
+
+- **Cinema Projector Block:** Placed in your world to control playback on any connected screen cluster.
+- **Cinema Remote Control:** Right-click a display cluster, then right-click a Cinema Projector to wirelessly link them.
+- **WATERMeDIA Powered:** Supports direct MP4, WebM, HLS (`.m3u8`), Twitch, Kick, and YouTube (with the WATERMeDIA YouTube addon).
+- **Spatial 3D Acoustics:** Choose whether sound emanates from the projector block or the screen wall, with linear distance falloff and real-time volume (0–100%) and range (8–128m) adjustments.
+- **Borderless Fullscreen Auto-Scaling:** Videos are scaled to match the display wall dimensions with nighttime cinema lighting.
+- **Spacious 480x320 GUI:** Features live status badges, clipboard URL pasting, quick-clear, and playback diagnostics.
+
 ## Supported Sources
 
 - Written Book
