@@ -3,6 +3,8 @@ package de.gener.mcdisplays;
 import com.mojang.logging.LogUtils;
 import de.gener.mcdisplays.block.DisplayPanelBlock;
 import de.gener.mcdisplays.block.DisplayPanelBlockEntity;
+import de.gener.mcdisplays.item.Ae2CpuMonitorItem;
+import de.gener.mcdisplays.item.Ae2CpuMonitorItem.Ae2MonitorData;
 import de.gener.mcdisplays.item.ColonyDashboardItem;
 import de.gener.mcdisplays.item.ColonyDashboardItem.ColonyDashboardData;
 import de.gener.mcdisplays.item.MarkdownPadItem;
@@ -60,6 +62,13 @@ public final class McDisplaysMod {
                     .networkSynchronized(ColonyDashboardData.STREAM_CODEC)
     );
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Ae2MonitorData>> AE2_MONITOR_DATA = DATA_COMPONENTS.registerComponentType(
+            "ae2_monitor_data",
+            builder -> builder
+                    .persistent(Ae2MonitorData.CODEC)
+                    .networkSynchronized(Ae2MonitorData.STREAM_CODEC)
+    );
+
     public static final DeferredBlock<DisplayPanelBlock> DISPLAY_PANEL = BLOCKS.register("display_panel",
         () -> new DisplayPanelBlock());
     public static final DeferredItem<Item> DISPLAY_PANEL_ITEM = ITEMS.register(
@@ -73,6 +82,10 @@ public final class McDisplaysMod {
     public static final DeferredItem<ColonyDashboardItem> COLONY_DASHBOARD = ITEMS.register(
         "colony_dashboard",
         ColonyDashboardItem::new
+    );
+    public static final DeferredItem<Ae2CpuMonitorItem> AE2_CPU_MONITOR = ITEMS.register(
+        "ae2_cpu_monitor",
+        Ae2CpuMonitorItem::new
     );
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DisplayPanelBlockEntity>> DISPLAY_PANEL_BLOCK_ENTITY = BLOCK_ENTITY_TYPES.register(
         "display_panel",
@@ -91,6 +104,7 @@ public final class McDisplaysMod {
                 output.accept(DISPLAY_PANEL_ITEM.get());
                 output.accept(MARKDOWN_PAD.get());
                 output.accept(COLONY_DASHBOARD.get());
+                output.accept(AE2_CPU_MONITOR.get());
             })
             .build()
     );

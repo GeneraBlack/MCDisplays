@@ -19,6 +19,8 @@ public final class McDisplaysConfig {
     private final ModConfigSpec.IntValue maxDisplayWidth;
     private final ModConfigSpec.IntValue maxDisplayHeight;
     private final ModConfigSpec.BooleanValue allowManualPageTurning;
+    private final ModConfigSpec.IntValue ae2WarnMinutes;
+    private final ModConfigSpec.IntValue ae2AlertMinutes;
 
     private McDisplaysConfig(ModConfigSpec.Builder builder) {
         builder.comment("Gameplay settings for MC Displays.")
@@ -43,6 +45,27 @@ public final class McDisplaysConfig {
             .define("allowManualPageTurning", true);
 
         builder.pop();
+
+        builder.comment("Settings for the AE2 Crafting CPU Monitor.")
+            .translation(TRANSLATION_PREFIX + ".section.ae2")
+            .push("ae2");
+        ae2WarnMinutes = builder
+            .translation(TRANSLATION_PREFIX + ".ae2.warnMinutes")
+            .comment("A crafting job running longer than this many minutes is shown in orange.")
+            .defineInRange("warnMinutes", 15, 1, 10080);
+        ae2AlertMinutes = builder
+            .translation(TRANSLATION_PREFIX + ".ae2.alertMinutes")
+            .comment("A crafting job running longer than this many minutes is shown in red.")
+            .defineInRange("alertMinutes", 60, 1, 10080);
+        builder.pop();
+    }
+
+    public static int warnMinutes() {
+        return INSTANCE.ae2WarnMinutes.get();
+    }
+
+    public static int alertMinutes() {
+        return Math.max(INSTANCE.ae2AlertMinutes.get(), INSTANCE.ae2WarnMinutes.get());
     }
 
     public static int refreshIntervalTicks() {

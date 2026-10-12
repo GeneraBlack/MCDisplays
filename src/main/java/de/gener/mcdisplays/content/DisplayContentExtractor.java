@@ -33,6 +33,10 @@ public final class DisplayContentExtractor {
             return true;
         }
 
+        if (stack.is(McDisplaysMod.AE2_CPU_MONITOR.get())) {
+            return true;
+        }
+
         if (stack.is(Items.WRITTEN_BOOK) || stack.is(Items.WRITABLE_BOOK)) {
             return true;
         }
@@ -52,6 +56,10 @@ public final class DisplayContentExtractor {
 
         if (stack.is(McDisplaysMod.COLONY_DASHBOARD.get())) {
             return ColonyDashboardExtractor.extract(level, stack);
+        }
+
+        if (stack.is(McDisplaysMod.AE2_CPU_MONITOR.get())) {
+            return Ae2CpuMonitorExtractor.extract(level, stack);
         }
 
         if (stack.is(Items.WRITTEN_BOOK)) {

@@ -54,5 +54,17 @@
   "message.mcdisplays.colony_dashboard.mode_changed": "Dashboard mode: %s",
   "message.mcdisplays.colony_dashboard.linked": "Linked to colony: %s",
   "message.mcdisplays.colony_dashboard.no_colony": "No colony found at this location.",
-  "message.mcdisplays.colony_dashboard.link_failed": "Failed to link to colony."
+  "message.mcdisplays.colony_dashboard.link_failed": "Failed to link to colony.",
+  "item.mcdisplays.ae2_cpu_monitor": "AE2 Crafting CPU Monitor",
+  "item.mcdisplays.ae2_cpu_monitor.tooltip.linked": "Linked to ME network at %d, %d, %d (%s)",
+  "item.mcdisplays.ae2_cpu_monitor.tooltip.unlinked": "Not linked to an ME network",
+  "item.mcdisplays.ae2_cpu_monitor.tooltip.hint": "Sneak-click any block of an ME network to link.",
+  "message.mcdisplays.ae2_cpu_monitor.linked": "Linked to ME network (%d crafting CPUs).",
+  "message.mcdisplays.ae2_cpu_monitor.no_network": "This block is not part of an ME network.",
+  "message.mcdisplays.ae2_cpu_monitor.ae2_missing": "Applied Energistics 2 is not installed.",
+  "mcdisplays.configuration.section.ae2": "AE2 Crafting CPU Monitor",
+  "mcdisplays.configuration.ae2.warnMinutes": "Warning after (minutes)",
+  "mcdisplays.configuration.ae2.warnMinutes.tooltip": "Crafting jobs running longer than this are shown in orange.",
+  "mcdisplays.configuration.ae2.alertMinutes": "Alert after (minutes)",
+  "mcdisplays.configuration.ae2.alertMinutes.tooltip": "Crafting jobs running longer than this are shown in red."
 }
