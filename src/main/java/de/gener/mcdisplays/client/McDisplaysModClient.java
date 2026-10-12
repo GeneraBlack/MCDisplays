@@ -29,6 +29,7 @@ public final class McDisplaysModClient {
     @SubscribeEvent
     public static void registerMenuScreens(RegisterMenuScreensEvent event) {
         event.register(McDisplaysMod.DISPLAY_PANEL_MENU.get(), DisplayPanelScreen::new);
+        event.register(McDisplaysMod.CINEMA_PROJECTOR_MENU.get(), CinemaProjectorScreen::new);
     }
 
     private static synchronized void registerGameEvents() {

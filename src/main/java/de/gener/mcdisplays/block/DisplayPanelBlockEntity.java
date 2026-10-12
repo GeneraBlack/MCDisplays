@@ -47,6 +47,8 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     private static final String TAG_OWNER_NAME = "OwnerName";
     private static final String TAG_PRIVATE = "Private";
     private static final String TAG_GLOWING = "Glowing";
+    private static final String TAG_CINEMA_ACTIVE = "CinemaActive";
+    private static final String TAG_CINEMA_PROJECTOR = "CinemaProjector";
     private ItemStack sourceStack = ItemStack.EMPTY;
     private List<String> cachedPages = List.of(DisplayDocument.placeholder().pages().get(0));
     private String cachedTitle = DisplayDocument.placeholder().title();
@@ -64,6 +66,9 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     private String ownerName = "";
     private boolean privateMode;
     private boolean glowingText;
+    @Nullable
+    private BlockPos cinemaProjectorPos;
+    private boolean cinemaActive;
 
     public DisplayPanelBlockEntity(BlockPos pos, BlockState blockState) {
         super(McDisplaysMod.DISPLAY_PANEL_BLOCK_ENTITY.get(), pos, blockState);
@@ -77,11 +82,27 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
         blockEntity.refreshTicks++;
         if (blockEntity.refreshTicks >= McDisplaysConfig.refreshIntervalTicks()) {
             blockEntity.refreshTicks = 0;
-            blockEntity.refreshFromSource();
+            if (blockEntity.cinemaActive) {
+                if (blockEntity.cinemaProjectorPos == null || !level.isLoaded(blockEntity.cinemaProjectorPos)
+                    || !(level.getBlockEntity(blockEntity.cinemaProjectorPos) instanceof CinemaProjectorBlockEntity projector)
+                    || !pos.equals(projector.getLinkedScreenPos())) {
+                    blockEntity.cinemaActive = false;
+                    blockEntity.cinemaProjectorPos = null;
+                    blockEntity.refreshFromSource();
+                }
+            } else {
+                blockEntity.refreshFromSource();
+            }
         }
     }
 
     public boolean tryAcceptSupportedItem(Player player, InteractionHand hand) {
+        if (cinemaActive) {
+            if (!level.isClientSide) {
+                player.displayClientMessage(Component.translatable("message.mcdisplays.display_panel.cinema_locked").withStyle(net.minecraft.ChatFormatting.RED), true);
+            }
+            return false;
+        }
         ItemStack heldStack = player.getItemInHand(hand);
         if (!DisplayContentExtractor.supports(heldStack) || level == null) {
             return false;
@@ -360,8 +381,38 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
         markUpdated();
     }
 
+    public void setCinemaFeed(BlockPos projectorPos, String title, String markdown) {
+        this.cinemaProjectorPos = projectorPos;
+        this.cinemaActive = true;
+        this.cachedTitle = title;
+        this.cachedPages = List.of(markdown);
+        this.manualPageOffset = 0;
+        markUpdated();
+    }
+
+    public void clearCinemaFeed(BlockPos projectorPos) {
+        if (this.cinemaProjectorPos != null && this.cinemaProjectorPos.equals(projectorPos)) {
+            this.cinemaProjectorPos = null;
+            this.cinemaActive = false;
+            refreshFromSource();
+        }
+    }
+
+    public boolean isCinemaActive() {
+        return this.cinemaActive;
+    }
+
+    @Nullable
+    public BlockPos getCinemaProjectorPos() {
+        return this.cinemaProjectorPos;
+    }
+
     private void refreshFromSource() {
         if (level == null || level.isClientSide) {
+            return;
+        }
+
+        if (cinemaActive) {
             return;
         }
 
@@ -601,6 +652,10 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
         if (glowingText) {
             tag.putBoolean(TAG_GLOWING, true);
         }
+        if (cinemaActive && cinemaProjectorPos != null) {
+            tag.putBoolean(TAG_CINEMA_ACTIVE, true);
+            tag.putLong(TAG_CINEMA_PROJECTOR, cinemaProjectorPos.asLong());
+        }
     }
 
     @Override
@@ -613,6 +668,8 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
         ownerName = tag.getString(TAG_OWNER_NAME);
         privateMode = tag.getBoolean(TAG_PRIVATE);
         glowingText = tag.getBoolean(TAG_GLOWING);
+        cinemaActive = tag.getBoolean(TAG_CINEMA_ACTIVE);
+        cinemaProjectorPos = tag.contains(TAG_CINEMA_PROJECTOR) ? BlockPos.of(tag.getLong(TAG_CINEMA_PROJECTOR)) : null;
 
         List<String> pages = new ArrayList<>();
         ListTag pageList = tag.getList(TAG_PAGES, Tag.TAG_STRING);

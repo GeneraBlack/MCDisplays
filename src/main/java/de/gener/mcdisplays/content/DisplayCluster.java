@@ -98,5 +98,8 @@ public final class DisplayCluster {
     }
 
     public record Cluster(List<BlockPos> members, Direction facing, int width, int height, int localX, int localY) {
+        public BlockPos origin() {
+            return members.isEmpty() ? BlockPos.ZERO : members.get(0);
+        }
     }
 }

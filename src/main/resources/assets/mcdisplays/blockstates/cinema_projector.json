@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north,linked=false,playing=false": { "model": "mcdisplays:block/cinema_projector" },
+    "facing=east,linked=false,playing=false": { "model": "mcdisplays:block/cinema_projector", "y": 90 },
+    "facing=south,linked=false,playing=false": { "model": "mcdisplays:block/cinema_projector", "y": 180 },
+    "facing=west,linked=false,playing=false": { "model": "mcdisplays:block/cinema_projector", "y": 270 },
+    "facing=north,linked=true,playing=false": { "model": "mcdisplays:block/cinema_projector" },
+    "facing=east,linked=true,playing=false": { "model": "mcdisplays:block/cinema_projector", "y": 90 },
+    "facing=south,linked=true,playing=false": { "model": "mcdisplays:block/cinema_projector", "y": 180 },
+    "facing=west,linked=true,playing=false": { "model": "mcdisplays:block/cinema_projector", "y": 270 },
+    "facing=north,linked=false,playing=true": { "model": "mcdisplays:block/cinema_projector_on" },
+    "facing=east,linked=false,playing=true": { "model": "mcdisplays:block/cinema_projector_on", "y": 90 },
+    "facing=south,linked=false,playing=true": { "model": "mcdisplays:block/cinema_projector_on", "y": 180 },
+    "facing=west,linked=false,playing=true": { "model": "mcdisplays:block/cinema_projector_on", "y": 270 },
+    "facing=north,linked=true,playing=true": { "model": "mcdisplays:block/cinema_projector_on" },
+    "facing=east,linked=true,playing=true": { "model": "mcdisplays:block/cinema_projector_on", "y": 90 },
+    "facing=south,linked=true,playing=true": { "model": "mcdisplays:block/cinema_projector_on", "y": 180 },
+    "facing=west,linked=true,playing=true": { "model": "mcdisplays:block/cinema_projector_on", "y": 270 }
+  }
+}
