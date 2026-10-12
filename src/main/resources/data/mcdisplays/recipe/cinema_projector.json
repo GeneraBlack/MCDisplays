@@ -1,0 +1,45 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IDI",
+    "GLI",
+    "SRS"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "D": {
+      "item": "minecraft:polished_deepslate"
+    },
+    "G": [
+      {
+        "item": "minecraft:tinted_glass"
+      },
+      {
+        "item": "minecraft:glass"
+      }
+    ],
+    "L": [
+      {
+        "item": "minecraft:glowstone"
+      },
+      {
+        "item": "minecraft:sea_lantern"
+      },
+      {
+        "item": "minecraft:redstone_lamp"
+      }
+    ],
+    "S": {
+      "item": "minecraft:smooth_stone"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  ],
+  "result": {
+    "id": "mcdisplays:cinema_projector",
+    "count": 1
+  }
+}

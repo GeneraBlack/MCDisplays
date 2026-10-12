@@ -1,0 +1,42 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " A ",
+    "NBN",
+    " R "
+  ],
+  "key": {
+    "A": [
+      {
+        "item": "minecraft:amethyst_shard"
+      },
+      {
+        "item": "minecraft:glowstone_dust"
+      },
+      {
+        "item": "minecraft:redstone_torch"
+      }
+    ],
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "B": [
+      {
+        "item": "minecraft:stone_button"
+      },
+      {
+        "item": "minecraft:polished_blackstone_button"
+      },
+      {
+        "item": "minecraft:oak_button"
+      }
+    ],
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  ],
+  "result": {
+    "id": "mcdisplays:cinema_remote",
+    "count": 1
+  }
+}

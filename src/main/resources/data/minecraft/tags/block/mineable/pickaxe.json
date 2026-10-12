@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "mcdisplays:display_panel"
+    "mcdisplays:display_panel",
+    "mcdisplays:cinema_projector"
   ]
 }
