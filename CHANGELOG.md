@@ -1,8 +1,13 @@
-# MC Displays 1.3.1 (NeoForge 1.21.1)
+# MC Displays 1.3.2 (NeoForge 1.21.1)
 
-Welcome to MC Displays 1.3.1! This release introduces the **Cinema Projector** system with real-time video streaming, multiplayer playback synchronization, spatial cinema acoustics, remote linking, modern player UI, alongside major Markdown Pad and display improvements.
+Welcome to MC Displays 1.3.2! This release fixes multiline formatting and line breaks on display panels (especially for MineColonies Resource Scrolls on larger displays), alongside the **Cinema Projector** system with real-time video streaming, multiplayer playback synchronization, spatial acoustics, and remote linking.
 
 ---
+
+### 🐛 Fixes & Improvements
+- **Resource Scroll & Multiline Display Layout:** Single line breaks (`\n`) are now preserved as proper line breaks on display panels instead of being soft-wrapped into spaces. Items on Resource Scrolls, books, Markdown Pads, and dashboards stay cleanly on their own lines even on large displays.
+- **Dynamic Display Pagination:** MineColonies and AE2 data are no longer artificially divided into fixed 10-line chunks, allowing displays to dynamically paginate to fit the physical screen dimensions (e.g. up to 30–40 items on a 3x3 or 4x4 wall).
+
 
 ### 🎬 Cinema Projector & Video Streaming
 - **Cinema Projector Block:** Place a projector and stream videos, live streams, and media directly onto any size modular screen cluster (e.g. 16x9, 8x4, or massive cinema walls).
