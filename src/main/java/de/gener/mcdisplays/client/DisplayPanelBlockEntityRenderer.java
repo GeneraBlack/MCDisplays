@@ -48,7 +48,7 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
         }
 
         LayoutPage page = blockEntity.getPage(cluster);
-        boolean glowingDisplay = blockEntity.isGlowingDisplay();
+        boolean glowingDisplay = blockEntity.isGlowingDisplay() || blockEntity.isCinemaActive();
         int textLight = glowingDisplay ? LightTexture.FULL_BRIGHT : packedLight;
 
         poseStack.pushPose();
@@ -100,15 +100,16 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
         float y1 = op.y();
         float x2 = x1 + op.width();
         float y2 = y1 + op.height();
+        int videoLight = LightTexture.FULL_BRIGHT;
 
         if (op.blocked()) {
-            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, "[Blocked] " + op.url(), 0x88FF5555, 0xFFFF6666, light);
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, "[Blocked] " + op.url(), 0x88FF5555, 0xFFFF6666, videoLight);
             return;
         }
 
         if (!ClientVideoManager.isWaterMediaAvailable()) {
             String label = op.title().isBlank() ? "Video Stream" : op.title();
-            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, "[Video] " + label + " (Requires WATERMeDIA mod)", 0x888050D0, 0xFFC8B5EE, light);
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, "[Video] " + label + " (Requires WATERMeDIA mod)", 0x888050D0, 0xFFC8B5EE, videoLight);
             return;
         }
 
@@ -124,21 +125,21 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
             ResourceLocation location = player.getLocation();
             if (location != null) {
                 VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(location));
-                int alpha = glowing ? 255 : 240;
-                consumer.addVertex(pose, x1, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 1.0F).setLight(light);
-                consumer.addVertex(pose, x2, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 1.0F).setLight(light);
-                consumer.addVertex(pose, x2, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 0.0F).setLight(light);
-                consumer.addVertex(pose, x1, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 0.0F).setLight(light);
+                int alpha = 255;
+                consumer.addVertex(pose, x1, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 1.0F).setLight(videoLight);
+                consumer.addVertex(pose, x2, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 1.0F).setLight(videoLight);
+                consumer.addVertex(pose, x2, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 0.0F).setLight(videoLight);
+                consumer.addVertex(pose, x1, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 0.0F).setLight(videoLight);
                 return;
             }
         }
 
         if (player != null && player.isBroken()) {
             String label = op.title().isBlank() ? "Failed to load video stream" : op.title();
-            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, label, 0x66FF5555, 0xFFFF6666, light);
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, label, 0x66FF5555, 0xFFFF6666, videoLight);
         } else {
             String label = op.title().isBlank() ? "Buffering video stream..." : "Loading: " + op.title();
-            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, label, 0x6680DEEA, 0xFF80DEEA, light);
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, label, 0x6680DEEA, 0xFF80DEEA, videoLight);
         }
     }
 

@@ -37,7 +37,7 @@
     "R": {
       "item": "minecraft:redstone"
     }
-  ],
+  },
   "result": {
     "id": "mcdisplays:cinema_projector",
     "count": 1

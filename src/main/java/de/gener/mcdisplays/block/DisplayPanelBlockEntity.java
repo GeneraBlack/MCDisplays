@@ -493,8 +493,21 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     }
 
     private DisplayPanelBlockEntity getDocumentOwner(DisplayCluster.Cluster cluster) {
+        DisplayPanelBlockEntity cinemaOwner = getCinemaOwner(cluster);
+        if (cinemaOwner != null) {
+            return cinemaOwner;
+        }
+
         DisplayPanelBlockEntity sourceOwner = getCurrentSourceOwner(cluster);
         return sourceOwner != null ? sourceOwner : this;
+    }
+
+    @Nullable
+    private DisplayPanelBlockEntity getCinemaOwner(DisplayCluster.Cluster cluster) {
+        return getClusterEntities(cluster).stream()
+            .filter(DisplayPanelBlockEntity::isCinemaActive)
+            .findFirst()
+            .orElse(null);
     }
 
     private boolean isOwnedBy(Player player) {

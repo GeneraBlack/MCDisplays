@@ -1,6 +1,7 @@
 package de.gener.mcdisplays.block;
 
 import de.gener.mcdisplays.McDisplaysMod;
+import de.gener.mcdisplays.content.DisplayCluster;
 import de.gener.mcdisplays.menu.CinemaProjectorMenu;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
@@ -84,9 +85,21 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         markUpdated();
     }
 
+    public static String normalizeUrl(String raw) {
+        return de.gener.mcdisplays.markdown.MediaPolicy.normalizeUrl(raw);
+    }
+
     public void unlinkScreen() {
         if (linkedScreenPos != null && level != null) {
-            if (level.getBlockEntity(linkedScreenPos) instanceof DisplayPanelBlockEntity display) {
+            BlockState targetState = level.getBlockState(linkedScreenPos);
+            if (targetState.getBlock() instanceof DisplayPanelBlock) {
+                DisplayCluster.Cluster cluster = DisplayCluster.find(level, linkedScreenPos, targetState);
+                for (BlockPos member : cluster.members()) {
+                    if (level.getBlockEntity(member) instanceof DisplayPanelBlockEntity display) {
+                        display.clearCinemaFeed(worldPosition);
+                    }
+                }
+            } else if (level.getBlockEntity(linkedScreenPos) instanceof DisplayPanelBlockEntity display) {
                 display.clearCinemaFeed(worldPosition);
             }
         }
@@ -104,7 +117,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
     }
 
     public void updatePlayback(String newUrl, boolean newPlaying, int newVolume, int newDistance, boolean newLoop) {
-        this.url = newUrl != null ? newUrl.trim() : "";
+        this.url = normalizeUrl(newUrl);
         this.volume = Math.clamp(newVolume, 0, 100);
         this.distance = Math.clamp(newDistance, 8, 128);
         this.loop = newLoop;
@@ -125,7 +138,14 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
             return;
         }
 
-        if (level.getBlockEntity(linkedScreenPos) instanceof DisplayPanelBlockEntity display) {
+        BlockState screenState = level.getBlockState(linkedScreenPos);
+        if (!(screenState.getBlock() instanceof DisplayPanelBlock)) {
+            return;
+        }
+
+        DisplayCluster.Cluster cluster = DisplayCluster.find(level, linkedScreenPos, screenState);
+        BlockPos masterPos = cluster.origin();
+        if (level.getBlockEntity(masterPos) instanceof DisplayPanelBlockEntity display) {
             if (this.playing && !this.url.isBlank()) {
                 String videoTag = String.format("<video src=\"%s\" volume=\"%d\" distance=\"%d\" %scinema />",
                     this.url, this.volume, this.distance, this.loop ? "loop " : "");

@@ -18,8 +18,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaProjectorMenu> {
-    private static final int SCREEN_WIDTH = 280;
-    private static final int SCREEN_HEIGHT = 216;
+    private static final int SCREEN_WIDTH = 380;
+    private static final int SCREEN_HEIGHT = 262;
 
     private EditBox urlBox;
     private Button playButton;
@@ -37,8 +37,8 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         super(menu, playerInventory, title);
         this.imageWidth = SCREEN_WIDTH;
         this.imageHeight = SCREEN_HEIGHT;
-        this.titleLabelX = 12;
-        this.titleLabelY = 8;
+        this.titleLabelX = 14;
+        this.titleLabelY = 10;
     }
 
     @Override
@@ -52,9 +52,9 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         int left = leftPos;
         int top = topPos;
 
-        // URL Input
-        int urlY = top + 80;
-        urlBox = addRenderableWidget(new EditBox(font, left + 12, urlY, 196, 18, Component.translatable("gui.mcdisplays.cinema_projector.url")));
+        // 1. URL Input Row
+        int urlY = top + 92;
+        urlBox = addRenderableWidget(new EditBox(font, left + 14, urlY, 252, 20, Component.translatable("gui.mcdisplays.cinema_projector.url")));
         urlBox.setMaxLength(2048);
         urlBox.setHint(Component.translatable("gui.mcdisplays.cinema_projector.url_hint"));
         urlBox.setValue(projector.getUrl());
@@ -62,7 +62,7 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         // Paste button
         addRenderableWidget(
             Button.builder(Component.translatable("gui.mcdisplays.cinema_projector.paste"), button -> pasteClipboard())
-                .bounds(left + 212, urlY, 28, 18)
+                .bounds(left + 272, urlY, 52, 20)
                 .tooltip(Tooltip.create(Component.translatable("gui.mcdisplays.cinema_projector.paste_tooltip")))
                 .build()
         );
@@ -70,50 +70,51 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         // Clear button
         addRenderableWidget(
             Button.builder(Component.literal("X"), button -> urlBox.setValue(""))
-                .bounds(left + 242, urlY, 26, 18)
+                .bounds(left + 330, urlY, 36, 20)
                 .tooltip(Tooltip.create(Component.translatable("gui.mcdisplays.cinema_projector.clear_tooltip")))
                 .build()
         );
 
-        // Sliders & Loop
-        int controlsY = top + 110;
+        // 2. Acoustics & Sliders
+        int controlsY = top + 150;
         double volInitial = Mth.clamp(currentVolume / 100.0D, 0.0D, 1.0D);
-        volumeSlider = addRenderableWidget(new VolumeSlider(left + 12, controlsY, 82, 20, volInitial));
+        volumeSlider = addRenderableWidget(new VolumeSlider(left + 14, controlsY, 170, 20, volInitial));
 
-        double distInitial = Mth.clamp((currentDistance - 8.0D) / (64.0D - 8.0D), 0.0D, 1.0D);
-        distanceSlider = addRenderableWidget(new DistanceSlider(left + 98, controlsY, 88, 20, distInitial));
+        double distInitial = Mth.clamp((currentDistance - 8.0D) / (128.0D - 8.0D), 0.0D, 1.0D);
+        distanceSlider = addRenderableWidget(new DistanceSlider(left + 196, controlsY, 170, 20, distInitial));
 
+        int subControlsY = top + 178;
         loopButton = addRenderableWidget(
             Button.builder(getLoopText(), button -> toggleLoop())
-                .bounds(left + 190, controlsY, 78, 20)
+                .bounds(left + 14, subControlsY, 120, 20)
                 .tooltip(Tooltip.create(Component.translatable("gui.mcdisplays.cinema_projector.loop_tooltip")))
                 .build()
         );
 
-        // Bottom Action Row
-        int actionY = top + 180;
+        // 3. Bottom Action Row
+        int actionY = top + 226;
         playButton = addRenderableWidget(
             Button.builder(Component.translatable("gui.mcdisplays.cinema_projector.play"), button -> handlePlay())
-                .bounds(left + 12, actionY, 76, 22)
+                .bounds(left + 14, actionY, 92, 24)
                 .build()
         );
 
         stopButton = addRenderableWidget(
             Button.builder(Component.translatable("gui.mcdisplays.cinema_projector.stop"), button -> handleStop())
-                .bounds(left + 92, actionY, 76, 22)
+                .bounds(left + 112, actionY, 92, 24)
                 .build()
         );
 
         unlinkButton = addRenderableWidget(
             Button.builder(Component.translatable("gui.mcdisplays.cinema_projector.unlink"), button -> handleUnlink())
-                .bounds(left + 172, actionY, 56, 22)
+                .bounds(left + 210, actionY, 84, 24)
                 .tooltip(Tooltip.create(Component.translatable("gui.mcdisplays.cinema_projector.unlink_tooltip")))
                 .build()
         );
 
         addRenderableWidget(
             Button.builder(Component.translatable("gui.mcdisplays.cinema_projector.close"), button -> onClose())
-                .bounds(left + 232, actionY, 36, 22)
+                .bounds(left + 300, actionY, 66, 24)
                 .build()
         );
 
@@ -160,17 +161,20 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         if (minecraft != null) {
             String clipboard = minecraft.keyboardHandler.getClipboard();
             if (clipboard != null && !clipboard.isBlank()) {
-                urlBox.setValue(clipboard.trim());
+                String clean = CinemaProjectorBlockEntity.normalizeUrl(clipboard);
+                urlBox.setValue(clean);
             }
         }
     }
 
     private void handlePlay() {
         CinemaProjectorBlockEntity projector = menu.blockEntity();
+        String normalized = CinemaProjectorBlockEntity.normalizeUrl(urlBox.getValue());
+        urlBox.setValue(normalized);
         PacketDistributor.sendToServer(new UpdateCinemaProjectorPayload(
             projector.getBlockPos(),
             UpdateCinemaProjectorPayload.ACTION_PLAY,
-            urlBox.getValue().trim(),
+            normalized,
             currentLoop,
             currentVolume,
             currentDistance
@@ -212,66 +216,66 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         drawBorder(guiGraphics, left, top, imageWidth, imageHeight, 0xFF4A3E5C);
 
         // Header section panel
-        guiGraphics.fill(left + 6, top + 6, left + imageWidth - 6, top + 68, 0xDD25202E);
-        drawBorder(guiGraphics, left + 6, top + 6, imageWidth - 12, 62, 0xFF5D4F75);
+        guiGraphics.fill(left + 6, top + 6, left + imageWidth - 6, top + 76, 0xDD25202E);
+        drawBorder(guiGraphics, left + 6, top + 6, imageWidth - 12, 70, 0xFF5D4F75);
 
         // Status badges in header
         boolean linked = projector.isLinked();
         boolean playing = projector.isPlaying();
 
-        // Link badge
+        // Link badge (110px)
         int linkBadgeColor = linked ? 0xFF2E7D32 : 0xFFC62828;
         int linkBadgeBorder = linked ? 0xFF81C784 : 0xFFE57373;
-        guiGraphics.fill(left + 12, top + 22, left + 76, top + 34, linkBadgeColor);
-        drawBorder(guiGraphics, left + 12, top + 22, 64, 12, linkBadgeBorder);
+        guiGraphics.fill(left + 14, top + 26, left + 124, top + 42, linkBadgeColor);
+        drawBorder(guiGraphics, left + 14, top + 26, 110, 16, linkBadgeBorder);
         Component linkText = Component.translatable(linked ? "gui.mcdisplays.cinema_projector.status_linked" : "gui.mcdisplays.cinema_projector.status_unlinked");
-        guiGraphics.drawCenteredString(font, linkText, left + 44, top + 24, 0xFFFFFF);
+        guiGraphics.drawCenteredString(font, linkText, left + 69, top + 30, 0xFFFFFF);
 
-        // Playback badge
+        // Playback badge (110px)
         int playBadgeColor = playing ? 0xFF1565C0 : (linked ? 0xFFF57F17 : 0xFF424242);
         int playBadgeBorder = playing ? 0xFF64B5F6 : (linked ? 0xFFFFD54F : 0xFF757575);
-        guiGraphics.fill(left + 82, top + 22, left + 154, top + 34, playBadgeColor);
-        drawBorder(guiGraphics, left + 82, top + 22, 72, 12, playBadgeBorder);
+        guiGraphics.fill(left + 130, top + 26, left + 240, top + 42, playBadgeColor);
+        drawBorder(guiGraphics, left + 130, top + 26, 110, 16, playBadgeBorder);
         Component playText = Component.translatable(playing ? "gui.mcdisplays.cinema_projector.state_playing" : (linked ? "gui.mcdisplays.cinema_projector.state_standby" : "gui.mcdisplays.cinema_projector.state_idle"));
-        guiGraphics.drawCenteredString(font, playText, left + 118, top + 24, 0xFFFFFF);
+        guiGraphics.drawCenteredString(font, playText, left + 185, top + 30, 0xFFFFFF);
 
-        // Engine badge
+        // Engine badge (120px)
         boolean engineOk = ClientVideoManager.isWaterMediaAvailable();
         int engineBadgeColor = engineOk ? 0xFF00695C : 0xFFAD1457;
         int engineBadgeBorder = engineOk ? 0xFF4DB6AC : 0xFFF06292;
-        guiGraphics.fill(left + 160, top + 22, left + imageWidth - 12, top + 34, engineBadgeColor);
-        drawBorder(guiGraphics, left + 160, top + 22, imageWidth - 172, 12, engineBadgeBorder);
+        guiGraphics.fill(left + 246, top + 26, left + 366, top + 42, engineBadgeColor);
+        drawBorder(guiGraphics, left + 246, top + 26, 120, 16, engineBadgeBorder);
         Component engineText = Component.translatable(engineOk ? "gui.mcdisplays.cinema_projector.engine_ready" : "gui.mcdisplays.cinema_projector.engine_missing");
-        guiGraphics.drawCenteredString(font, engineText, left + 160 + (imageWidth - 172) / 2, top + 24, 0xFFFFFF);
+        guiGraphics.drawCenteredString(font, engineText, left + 306, top + 30, 0xFFFFFF);
 
         // Screen Target details
         if (linked && projector.getLinkedScreenPos() != null) {
             BlockPos tPos = projector.getLinkedScreenPos();
-            String details = String.format("%dx%d Cluster @ [%d, %d, %d]",
+            String details = String.format("%dx%d Screen Cluster @ [%d, %d, %d]",
                 projector.getLinkedWidth(), projector.getLinkedHeight(),
                 tPos.getX(), tPos.getY(), tPos.getZ());
-            guiGraphics.drawString(font, details, left + 12, top + 39, 0xFF81C784, false);
-            guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.screen_scale_info"), left + 12, top + 51, 0xFFB0BEC5, false);
+            guiGraphics.drawString(font, details, left + 14, top + 48, 0xFF81C784, false);
+            guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.screen_scale_info"), left + 14, top + 60, 0xFFB0BEC5, false);
         } else {
-            guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.no_screen_hint1"), left + 12, top + 39, 0xFFEF9A9A, false);
-            guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.no_screen_hint2"), left + 12, top + 51, 0xFFB0BEC5, false);
+            guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.no_screen_hint1"), left + 14, top + 48, 0xFFEF9A9A, false);
+            guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.no_screen_hint2"), left + 14, top + 60, 0xFFB0BEC5, false);
         }
 
         // Stream URL Area background
-        guiGraphics.fill(left + 6, top + 72, left + imageWidth - 6, top + 104, 0xBB201B27);
-        drawBorder(guiGraphics, left + 6, top + 72, imageWidth - 12, 32, 0xFF433954);
+        guiGraphics.fill(left + 6, top + 82, left + imageWidth - 6, top + 120, 0xBB201B27);
+        drawBorder(guiGraphics, left + 6, top + 82, imageWidth - 12, 38, 0xFF433954);
 
-        // Sliders Area background
-        guiGraphics.fill(left + 6, top + 107, left + imageWidth - 6, top + 140, 0xBB201B27);
-        drawBorder(guiGraphics, left + 6, top + 107, imageWidth - 12, 33, 0xFF433954);
+        // Sliders & Acoustics Area background
+        guiGraphics.fill(left + 6, top + 126, left + imageWidth - 6, top + 210, 0xBB201B27);
+        drawBorder(guiGraphics, left + 6, top + 126, imageWidth - 12, 84, 0xFF433954);
 
-        // Acoustic Spatial Info
-        guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.spatial_hint"), left + 12, top + 144, 0xFF90A4AE, false);
-        guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.spatial_subhint"), left + 12, top + 156, 0xFF78909C, false);
+        // Acoustics header and spatial info
+        guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.spatial_hint"), left + 14, top + 134, 0xFFCE93D8, false);
+        guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.spatial_subhint"), left + 142, top + 184, 0xFF90A4AE, false);
 
         // Action row background
-        guiGraphics.fill(left + 6, top + 172, left + imageWidth - 6, top + imageHeight - 6, 0xDD25202E);
-        drawBorder(guiGraphics, left + 6, top + 172, imageWidth - 12, imageHeight - 178, 0xFF5D4F75);
+        guiGraphics.fill(left + 6, top + 216, left + imageWidth - 6, top + imageHeight - 6, 0xDD25202E);
+        drawBorder(guiGraphics, left + 6, top + 216, imageWidth - 12, imageHeight - 222, 0xFF5D4F75);
     }
 
     @Override
@@ -318,13 +322,13 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
 
         @Override
         protected void updateMessage() {
-            int dist = (int) Math.round(8 + value * (64 - 8));
+            int dist = (int) Math.round(8 + value * (128 - 8));
             setMessage(Component.translatable("gui.mcdisplays.cinema_projector.distance_val", dist));
         }
 
         @Override
         protected void applyValue() {
-            currentDistance = (int) Math.round(8 + value * (64 - 8));
+            currentDistance = (int) Math.round(8 + value * (128 - 8));
         }
     }
 }

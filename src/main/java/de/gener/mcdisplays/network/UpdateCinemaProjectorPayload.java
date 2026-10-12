@@ -2,6 +2,7 @@ package de.gener.mcdisplays.network;
 
 import de.gener.mcdisplays.McDisplaysMod;
 import de.gener.mcdisplays.block.CinemaProjectorBlockEntity;
+import de.gener.mcdisplays.menu.CinemaProjectorMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -63,11 +64,14 @@ public record UpdateCinemaProjectorPayload(
                 return;
             }
 
-            if (player.distanceToSqr(
+            boolean validMenu = player.containerMenu instanceof CinemaProjectorMenu menu && menu.stillValid(player);
+            boolean validDistance = player.distanceToSqr(
                 payload.projectorPos.getX() + 0.5D,
                 payload.projectorPos.getY() + 0.5D,
                 payload.projectorPos.getZ() + 0.5D
-            ) > 64.0D) {
+            ) <= 4096.0D;
+
+            if (!validMenu && !validDistance) {
                 return;
             }
 

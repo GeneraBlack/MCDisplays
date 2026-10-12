@@ -239,4 +239,17 @@ public class MarkdownTest {
         assertInstanceOf(Block.Video.class, twitchBlocks.get(0));
         assertEquals("https://twitch.tv/example_streamer", ((Block.Video) twitchBlocks.get(0)).url());
     }
+
+    @Test
+    void testUrlNormalizationAndMediaPolicy() {
+        assertEquals("https://www.youtube.com/watch?v=123", MediaPolicy.normalizeUrl("www.youtube.com/watch?v=123"));
+        assertEquals("https://youtu.be/123", MediaPolicy.normalizeUrl("https://youtu.be/123"));
+        assertEquals("", MediaPolicy.normalizeUrl(""));
+        assertEquals("", MediaPolicy.normalizeUrl(null));
+
+        assertEquals("www.youtube.com", MediaPolicy.hostOf("www.youtube.com/watch?v=123"));
+        assertEquals("youtu.be", MediaPolicy.hostOf("https://youtu.be/123"));
+        assertTrue(MediaPolicy.isAllowed("www.youtube.com/watch?v=123"));
+        assertTrue(MediaPolicy.isAllowed("https://www.youtube.com/watch?v=123"));
+    }
 }

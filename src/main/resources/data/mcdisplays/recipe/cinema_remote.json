@@ -34,7 +34,7 @@
     "R": {
       "item": "minecraft:redstone"
     }
-  ],
+  },
   "result": {
     "id": "mcdisplays:cinema_remote",
     "count": 1

@@ -42,12 +42,27 @@ public final class MediaPolicy {
         return true;
     }
 
+    public static String normalizeUrl(String url) {
+        if (url == null) {
+            return "";
+        }
+        String trimmed = url.trim();
+        if (trimmed.isEmpty()) {
+            return "";
+        }
+        if (!trimmed.contains("://") && !trimmed.startsWith("file:/")) {
+            return "https://" + trimmed;
+        }
+        return trimmed;
+    }
+
     public static String hostOf(String url) {
-        if (url == null || url.isBlank()) {
+        String clean = normalizeUrl(url);
+        if (clean.isEmpty()) {
             return null;
         }
         try {
-            String host = URI.create(url.trim()).getHost();
+            String host = URI.create(clean).getHost();
             return host == null ? null : host.toLowerCase(Locale.ROOT);
         } catch (IllegalArgumentException invalid) {
             return null;
