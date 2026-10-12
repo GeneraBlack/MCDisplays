@@ -85,6 +85,12 @@ public final class MarkdownLayout {
         }
 
         List<LayoutPage> run(String title, List<Block> blocks) {
+            // Cinema fullscreen mode: if the document consists solely of a video block and title is empty/none/cinema
+            if (blocks.size() == 1 && blocks.get(0) instanceof Block.Video video && (video.cinema() || title.isEmpty() || "none".equalsIgnoreCase(title))) {
+                List<LayoutPage.Op> ops = List.of(new LayoutPage.VideoOp(video.url(), video.title(), video.volume(), video.distance(), video.loop(), true, video.blocked(), 0.0F, 0.0F, pageWidth, pageHeight));
+                return List.of(new LayoutPage(ops, 0, 1, pageWidth, pageHeight));
+            }
+
             List<Box> boxes = new ArrayList<>();
             for (Block block : blocks) {
                 boxes.addAll(layoutBlock(block));
@@ -117,6 +123,8 @@ public final class MarkdownLayout {
                             ops.add(rect.moved(dx, dy));
                         } else if (op instanceof LayoutPage.ImageOp img) {
                             ops.add(img.moved(dx, dy));
+                        } else if (op instanceof LayoutPage.VideoOp vid) {
+                            ops.add(vid.moved(dx, dy));
                         }
                     }
                 }
@@ -169,6 +177,8 @@ public final class MarkdownLayout {
                 return List.of(new Box(4.0F, 5.0F, false, List.of(new LayoutPage.RectOp(0.0F, 2.0F, contentWidth, 1.0F, 0x66FFFFFF))));
             } else if (block instanceof Block.Image image) {
                 return layoutImage(image);
+            } else if (block instanceof Block.Video video) {
+                return layoutVideo(video);
             }
             return List.of();
         }
@@ -505,6 +515,24 @@ public final class MarkdownLayout {
             float x = Math.max(0.0F, (available - targetWidth) / 2.0F);
             List<LayoutPage.Op> ops = new ArrayList<>();
             ops.add(new LayoutPage.ImageOp(image.url(), image.alt(), image.blocked(), x, 0.0F, targetWidth, targetHeight));
+            return List.of(new Box(4.0F, targetHeight, false, ops));
+        }
+
+        private List<Box> layoutVideo(Block.Video video) {
+            float available = contentWidth;
+            float aspect = 16.0F / 9.0F; // Standard widescreen 16:9 ratio
+
+            float targetWidth = available;
+            float targetHeight = targetWidth / aspect;
+            float maxHeight = Math.max(32.0F, pageHeight - 2.0F * MARGIN - 16.0F);
+            if (targetHeight > maxHeight && !video.cinema()) {
+                targetHeight = maxHeight;
+                targetWidth = targetHeight * aspect;
+            }
+
+            float x = Math.max(0.0F, (available - targetWidth) / 2.0F);
+            List<LayoutPage.Op> ops = new ArrayList<>();
+            ops.add(new LayoutPage.VideoOp(video.url(), video.title(), video.volume(), video.distance(), video.loop(), video.cinema(), video.blocked(), x, 0.0F, targetWidth, targetHeight));
             return List.of(new Box(4.0F, targetHeight, false, ops));
         }
 

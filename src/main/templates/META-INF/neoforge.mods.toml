@@ -40,3 +40,9 @@ itself up to date.
     type="optional"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="watermedia"
+    type="optional"
+    ordering="AFTER"
+    side="CLIENT"

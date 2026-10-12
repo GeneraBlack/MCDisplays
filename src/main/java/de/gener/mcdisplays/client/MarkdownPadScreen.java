@@ -1,5 +1,7 @@
 package de.gener.mcdisplays.client;
 
+import de.gener.mcdisplays.client.video.ClientVideoManager;
+import de.gener.mcdisplays.client.video.IVideoPlayer;
 import de.gener.mcdisplays.item.MarkdownPadItemData;
 import de.gener.mcdisplays.markdown.LayoutPage;
 import de.gener.mcdisplays.markdown.MarkdownLayout;
@@ -13,6 +15,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -70,6 +73,7 @@ public final class MarkdownPadScreen extends Screen {
             new WikiEntry("<div align=..>", "Right-aligned block", "<div align=\"right\">\nRight-aligned\n</div>\n\n", 0xFFD54F),
             new WikiEntry("``` Codeblock", "Code block with box", "```\nCode block\n```\n\n", 0xA6FFA6),
             new WikiEntry("![Image](URL)", "Media placeholder", "![Image description](https://example.com/image.png)\n\n", 0x6BB5FF),
+            new WikiEntry("<video src=..>", "YouTube/Twitch/MP4", "<video src=\"https://www.youtube.com/watch?v=...\" volume=\"100\" loop />\n\n", 0x80DEEA),
             new WikiEntry("[reset]", "Reset text colors", "[reset]", 0xC0B8C8)
         ))
     );
@@ -425,6 +429,12 @@ public final class MarkdownPadScreen extends Screen {
         }
 
         for (LayoutPage.Op op : page.ops()) {
+            if (op instanceof LayoutPage.VideoOp vid) {
+                renderPreviewVideo(guiGraphics, vid);
+            }
+        }
+
+        for (LayoutPage.Op op : page.ops()) {
             if (op instanceof LayoutPage.TextOp text) {
                 ClientTextMetrics.Prepared prepared = ClientTextMetrics.prepare(text);
                 guiGraphics.pose().pushPose();
@@ -491,6 +501,67 @@ public final class MarkdownPadScreen extends Screen {
         }
     }
 
+    private void renderPreviewVideo(GuiGraphics guiGraphics, LayoutPage.VideoOp vid) {
+        int x = (int) vid.x();
+        int y = (int) vid.y();
+        int w = (int) vid.width();
+        int h = (int) vid.height();
+
+        if (vid.blocked()) {
+            drawBorder(guiGraphics, x, y, w, h, 0x66FF5555);
+            String label = "[Blocked] " + vid.url();
+            int tw = font.width(label);
+            guiGraphics.drawString(font, label, x + Math.max(0, (w - tw) / 2), y + Math.max(0, (h - font.lineHeight) / 2), 0xFFFF7777, false);
+            return;
+        }
+
+        if (!ClientVideoManager.isWaterMediaAvailable()) {
+            drawBorder(guiGraphics, x, y, w, h, 0x668050D0);
+            String label = "[Video] " + (vid.title().isBlank() ? "Stream" : vid.title());
+            String sub = "(Install WATERMeDIA for video playback)";
+            int tw1 = font.width(label);
+            int tw2 = font.width(sub);
+            guiGraphics.drawString(font, label, x + Math.max(0, (w - tw1) / 2), y + h / 2 - 8, 0xFFC8B5EE, false);
+            guiGraphics.drawString(font, sub, x + Math.max(0, (w - tw2) / 2), y + h / 2 + 2, 0xFFA69BB8, false);
+            return;
+        }
+
+        IVideoPlayer player = ClientVideoManager.getOrCreate("preview_screen", vid.url(), vid.loop());
+        if (player != null && player.isReady()) {
+            player.setVolume(0); // Mute audio during editor preview
+            player.preRender();
+            ResourceLocation location = player.getLocation();
+            if (location != null) {
+                guiGraphics.blit(
+                    location,
+                    x,
+                    y,
+                    w,
+                    h,
+                    0.0F,
+                    0.0F,
+                    player.getWidth(),
+                    player.getHeight(),
+                    player.getWidth(),
+                    player.getHeight()
+                );
+                return;
+            }
+        }
+
+        if (player != null && player.isBroken()) {
+            drawBorder(guiGraphics, x, y, w, h, 0x66FF5555);
+            String label = "Failed to load video stream";
+            int tw = font.width(label);
+            guiGraphics.drawString(font, label, x + Math.max(0, (w - tw) / 2), y + Math.max(0, (h - font.lineHeight) / 2), 0xFFFF6666, false);
+        } else {
+            drawBorder(guiGraphics, x, y, w, h, 0x6680DEEA);
+            String label = "Buffering video stream...";
+            int tw = font.width(label);
+            guiGraphics.drawString(font, label, x + Math.max(0, (w - tw) / 2), y + Math.max(0, (h - font.lineHeight) / 2), 0xFF80DEEA, false);
+        }
+    }
+
     private void rebuildPreview() {
         String rawTitle = titleBox == null ? initialTitle : titleBox.getValue();
         String titleText = MarkdownPadItemData.getEffectiveTitle(rawTitle, null);
@@ -524,6 +595,12 @@ public final class MarkdownPadScreen extends Screen {
             PacketDistributor.sendToServer(new SaveMarkdownPadPayload(hand == InteractionHand.MAIN_HAND, titleBox.getValue(), markdownBox.getValue()));
         }
         onClose();
+    }
+
+    @Override
+    public void onClose() {
+        ClientVideoManager.stopPlayer("preview_screen");
+        super.onClose();
     }
 
     @Override

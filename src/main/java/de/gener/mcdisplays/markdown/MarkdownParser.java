@@ -50,8 +50,14 @@ public final class MarkdownParser {
     private static final Pattern HTML_CLOSE = Pattern.compile("</\\s*(center|div|p|h[1-6])\\s*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ALIGN = Pattern.compile("align\\s*=\\s*[\"']?(left|center|right)", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_IMG = Pattern.compile("<\\s*img\\b[^>]*>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern HTML_VIDEO = Pattern.compile("<\\s*video\\b[^>]*>", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_SRC = Pattern.compile("src\\s*=\\s*[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_ALT = Pattern.compile("alt\\s*=\\s*[\"']([^\"']*)[\"']", Pattern.CASE_INSENSITIVE);
+    private static final Pattern HTML_ATTR_TITLE = Pattern.compile("title\\s*=\\s*[\"']([^\"']*)[\"']", Pattern.CASE_INSENSITIVE);
+    private static final Pattern HTML_ATTR_VOLUME = Pattern.compile("volume\\s*=\\s*[\"']?(\\d+)[\"']?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern HTML_ATTR_DISTANCE = Pattern.compile("distance\\s*=\\s*[\"']?(\\d+)[\"']?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern HTML_ATTR_LOOP = Pattern.compile("\\bloop\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern HTML_ATTR_CINEMA = Pattern.compile("\\b(cinema|fullscreen)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_BR = Pattern.compile("<\\s*br\\s*/?\\s*>", Pattern.CASE_INSENSITIVE);
     private static final int LINK_COLOR = 0x55AAFF;
 
@@ -65,6 +71,18 @@ public final class MarkdownParser {
         MarkdownParser parser = new MarkdownParser();
         parser.walk(PARSER.parse(markdown == null ? "" : markdown), 0, 0, null);
         return List.copyOf(parser.blocks);
+    }
+
+    public static boolean isVideoUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return false;
+        }
+        String u = url.toLowerCase(Locale.ROOT).trim();
+        if (u.contains("youtube.com/") || u.contains("youtu.be/") || u.contains("twitch.tv/")) {
+            return true;
+        }
+        return u.endsWith(".mp4") || u.endsWith(".webm") || u.endsWith(".m3u8") || u.endsWith(".mov")
+            || u.endsWith(".mkv") || u.endsWith(".ogg") || u.endsWith(".ogv") || u.endsWith(".mpd");
     }
 
     private Block.Align currentAlign(Block.Align forced) {
@@ -98,9 +116,24 @@ public final class MarkdownParser {
     private void addParagraph(Paragraph paragraph, int quoteDepth, int indent, Block.Align forcedAlign, String marker, boolean tight) {
         Node only = paragraph.getFirstChild();
         if (only instanceof org.commonmark.node.Image image && only.getNext() == null && marker.isEmpty()) {
-            blocks.add(new Block.Image(image.getDestination(), plainText(image), !MediaPolicy.isAllowed(image.getDestination())));
+            String dest = image.getDestination();
+            String alt = plainText(image);
+            if (isVideoUrl(dest) || "video".equalsIgnoreCase(alt)) {
+                blocks.add(new Block.Video(dest, alt.isBlank() || "video".equalsIgnoreCase(alt) ? "Video" : alt, 100, 32, true, false, !MediaPolicy.isAllowed(dest)));
+                return;
+            }
+            blocks.add(new Block.Image(dest, alt, !MediaPolicy.isAllowed(dest)));
             return;
         }
+
+        if (marker.isEmpty()) {
+            String rawText = plainText(paragraph).trim();
+            if ((rawText.startsWith("http://") || rawText.startsWith("https://")) && isVideoUrl(rawText)) {
+                blocks.add(new Block.Video(rawText, "Video", 100, 32, true, false, !MediaPolicy.isAllowed(rawText)));
+                return;
+            }
+        }
+
         blocks.add(new Block.Text(0, inlines(paragraph), currentAlign(forcedAlign), indent, marker, quoteDepth, tight));
     }
 
@@ -203,6 +236,38 @@ public final class MarkdownParser {
             }
         }
 
+        Matcher video = HTML_VIDEO.matcher(literal);
+        while (video.find()) {
+            String tag = video.group();
+            Matcher src = HTML_ATTR_SRC.matcher(tag);
+            if (src.find()) {
+                String url = src.group(1);
+                Matcher title = HTML_ATTR_TITLE.matcher(tag);
+                Matcher vol = HTML_ATTR_VOLUME.matcher(tag);
+                Matcher dist = HTML_ATTR_DISTANCE.matcher(tag);
+                boolean loop = HTML_ATTR_LOOP.matcher(tag).find();
+                boolean cinema = HTML_ATTR_CINEMA.matcher(tag).find();
+
+                int volume = 100;
+                if (vol.find()) {
+                    try {
+                        volume = Integer.parseInt(vol.group(1));
+                    } catch (Exception ignored) {
+                    }
+                }
+                int distance = 32;
+                if (dist.find()) {
+                    try {
+                        distance = Integer.parseInt(dist.group(1));
+                    } catch (Exception ignored) {
+                    }
+                }
+                String titleStr = title.find() ? title.group(1) : "Video";
+
+                blocks.add(new Block.Video(url, titleStr, volume, distance, loop, cinema, !MediaPolicy.isAllowed(url)));
+            }
+        }
+
         Matcher open = HTML_OPEN.matcher(literal);
         if (open.find()) {
             String tag = open.group(1).toLowerCase(Locale.ROOT);
@@ -214,7 +279,8 @@ public final class MarkdownParser {
             }
         }
 
-        String inner = HTML_BR.matcher(HTML_IMG.matcher(literal).replaceAll("")).replaceAll("\n").replaceAll("(?s)<[^>]*>", "").trim();
+        String cleaned = HTML_VIDEO.matcher(HTML_IMG.matcher(literal).replaceAll("")).replaceAll("");
+        String inner = HTML_BR.matcher(cleaned).replaceAll("\n").replaceAll("(?s)<[^>]*>", "").trim();
         if (!inner.isBlank()) {
             walk(PARSER.parse(inner), quoteDepth, indent, null);
         }

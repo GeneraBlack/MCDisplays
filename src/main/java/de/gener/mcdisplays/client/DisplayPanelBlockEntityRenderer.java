@@ -5,9 +5,12 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import de.gener.mcdisplays.block.DisplayPanelBlock;
 import de.gener.mcdisplays.block.DisplayPanelBlockEntity;
+import de.gener.mcdisplays.client.video.ClientVideoManager;
+import de.gener.mcdisplays.client.video.IVideoPlayer;
 import de.gener.mcdisplays.content.DisplayCluster;
 import de.gener.mcdisplays.markdown.LayoutPage;
 import de.gener.mcdisplays.markdown.MarkdownLayout;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -15,6 +18,9 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 public final class DisplayPanelBlockEntityRenderer implements BlockEntityRenderer<DisplayPanelBlockEntity> {
@@ -74,12 +80,66 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
         }
 
         for (LayoutPage.Op op : page.ops()) {
+            if (op instanceof LayoutPage.VideoOp vid) {
+                drawVideo(vid, cluster, state.getValue(DisplayPanelBlock.FACING), blockEntity.getBlockPos(), poseStack, bufferSource, glowingDisplay, textLight);
+            }
+        }
+
+        for (LayoutPage.Op op : page.ops()) {
             if (op instanceof LayoutPage.TextOp text) {
                 drawText(text, poseStack, bufferSource, glowingDisplay, textLight);
             }
         }
 
         poseStack.popPose();
+    }
+
+    private void drawVideo(LayoutPage.VideoOp op, DisplayCluster.Cluster cluster, Direction facing, BlockPos pos, PoseStack poseStack, MultiBufferSource bufferSource, boolean glowing, int light) {
+        Matrix4f pose = poseStack.last().pose();
+        float x1 = op.x();
+        float y1 = op.y();
+        float x2 = x1 + op.width();
+        float y2 = y1 + op.height();
+
+        if (op.blocked()) {
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, "[Blocked] " + op.url(), 0x88FF5555, 0xFFFF6666, light);
+            return;
+        }
+
+        if (!ClientVideoManager.isWaterMediaAvailable()) {
+            String label = op.title().isBlank() ? "Video Stream" : op.title();
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, "[Video] " + label + " (Requires WATERMeDIA mod)", 0x888050D0, 0xFFC8B5EE, light);
+            return;
+        }
+
+        IVideoPlayer player = ClientVideoManager.getOrCreate(pos, op.url(), op.loop());
+        if (player != null && player.isReady()) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) {
+                double dist = ClientVideoManager.getDistanceToCluster(mc.player.position(), pos, cluster.width(), cluster.height(), facing);
+                player.tickAudio(dist, op.volume(), op.distance());
+            }
+
+            player.preRender();
+            ResourceLocation location = player.getLocation();
+            if (location != null) {
+                VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(location));
+                int alpha = glowing ? 255 : 240;
+                consumer.addVertex(pose, x1, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 1.0F).setLight(light);
+                consumer.addVertex(pose, x2, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 1.0F).setLight(light);
+                consumer.addVertex(pose, x2, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 0.0F).setLight(light);
+                consumer.addVertex(pose, x1, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 0.0F).setLight(light);
+                return;
+            }
+        }
+
+        if (player != null && player.isBroken()) {
+            String label = op.title().isBlank() ? "Failed to load video stream" : op.title();
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, label, 0x66FF5555, 0xFFFF6666, light);
+        } else {
+            String label = op.title().isBlank() ? "Buffering video stream..." : "Loading: " + op.title();
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, label, 0x6680DEEA, 0xFF80DEEA, light);
+        }
     }
 
     private void drawImage(LayoutPage.ImageOp op, PoseStack poseStack, MultiBufferSource bufferSource, boolean glowing, int light) {

@@ -7,7 +7,7 @@ import java.util.List;
  * a display block is {@link MarkdownLayout#PX_PER_BLOCK} pixels wide and high.
  */
 public record LayoutPage(List<Op> ops, int index, int total, int widthPx, int heightPx) {
-    public sealed interface Op permits TextOp, RectOp, ImageOp {
+    public sealed interface Op permits TextOp, RectOp, ImageOp, VideoOp {
     }
 
     /** A single styled text run. {@link #renderCache} lets the renderer keep prepared text between frames. */
@@ -45,6 +45,13 @@ public record LayoutPage(List<Op> ops, int index, int total, int widthPx, int he
     public record ImageOp(String url, String alt, boolean blocked, float x, float y, float width, float height) implements Op {
         public ImageOp moved(float dx, float dy) {
             return new ImageOp(url, alt, blocked, x + dx, y + dy, width, height);
+        }
+    }
+
+    /** A video stream drawn on the display. */
+    public record VideoOp(String url, String title, int volume, int distance, boolean loop, boolean cinema, boolean blocked, float x, float y, float width, float height) implements Op {
+        public VideoOp moved(float dx, float dy) {
+            return new VideoOp(url, title, volume, distance, loop, cinema, blocked, x + dx, y + dy, width, height);
         }
     }
 }

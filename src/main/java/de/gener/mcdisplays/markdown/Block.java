@@ -46,4 +46,8 @@ public sealed interface Block {
     /** Image placeholder. {@code blocked} is set when the media policy rejects the URL. */
     record Image(String url, String alt, boolean blocked) implements Block {
     }
+
+    /** Video stream block (YouTube, Twitch, CDN, MP4, WebM, HLS). */
+    record Video(String url, String title, int volume, int distance, boolean loop, boolean cinema, boolean blocked) implements Block {
+    }
 }

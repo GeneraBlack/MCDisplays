@@ -195,4 +195,48 @@ public class MarkdownTest {
         }
         assertTrue(foundImageOp, "Layout should emit ImageOp for markdown images");
     }
+
+    @Test
+    void testVideoParsingAndLayout() {
+        // 1. Raw HTML <video> tag parsing
+        String htmlVideo = "<video src=\"https://www.youtube.com/watch?v=dQw4w9WgXcQ\" title=\"Rickroll\" volume=\"75\" distance=\"48\" loop cinema />";
+        List<Block> blocks = MarkdownParser.parse(htmlVideo);
+        assertEquals(1, blocks.size());
+        assertInstanceOf(Block.Video.class, blocks.get(0));
+        Block.Video video = (Block.Video) blocks.get(0);
+        assertEquals("https://www.youtube.com/watch?v=dQw4w9WgXcQ", video.url());
+        assertEquals("Rickroll", video.title());
+        assertEquals(75, video.volume());
+        assertEquals(48, video.distance());
+        assertTrue(video.loop());
+        assertTrue(video.cinema());
+        assertFalse(video.blocked());
+
+        // 2. Cinema fullscreen layout check: single video block with cinema mode fills entire 16x9 cluster
+        List<LayoutPage> cinemaPages = MarkdownLayout.layout("", htmlVideo, 16, 9, TextMetrics.APPROXIMATE);
+        assertEquals(1, cinemaPages.size());
+        LayoutPage cinemaPage = cinemaPages.get(0);
+        assertEquals(1, cinemaPage.ops().size());
+        assertInstanceOf(LayoutPage.VideoOp.class, cinemaPage.ops().get(0));
+        LayoutPage.VideoOp cinemaOp = (LayoutPage.VideoOp) cinemaPage.ops().get(0);
+        assertEquals(0.0F, cinemaOp.x());
+        assertEquals(0.0F, cinemaOp.y());
+        assertEquals(cinemaPage.widthPx(), (int) cinemaOp.width());
+        assertEquals(cinemaPage.heightPx(), (int) cinemaOp.height());
+
+        // 3. Standalone YouTube link parsing
+        String directLink = "https://youtu.be/dQw4w9WgXcQ";
+        List<Block> linkBlocks = MarkdownParser.parse(directLink);
+        assertEquals(1, linkBlocks.size());
+        assertInstanceOf(Block.Video.class, linkBlocks.get(0));
+        Block.Video directVideo = (Block.Video) linkBlocks.get(0);
+        assertEquals("https://youtu.be/dQw4w9WgXcQ", directVideo.url());
+
+        // 4. Standalone Twitch stream link parsing
+        String twitchLink = "https://twitch.tv/example_streamer";
+        List<Block> twitchBlocks = MarkdownParser.parse(twitchLink);
+        assertEquals(1, twitchBlocks.size());
+        assertInstanceOf(Block.Video.class, twitchBlocks.get(0));
+        assertEquals("https://twitch.tv/example_streamer", ((Block.Video) twitchBlocks.get(0)).url());
+    }
 }
