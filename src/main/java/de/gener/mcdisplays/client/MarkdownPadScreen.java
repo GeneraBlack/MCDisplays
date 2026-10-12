@@ -38,39 +38,39 @@ public final class MarkdownPadScreen extends Screen {
     }
 
     private static final List<WikiPage> WIKI_PAGES = List.of(
-        new WikiPage("Format", List.of(
-            new WikiEntry("# Überschrift 1", "Große Überschrift", "# Überschrift 1\n\n", 0xFFD54F),
-            new WikiEntry("## Überschrift 2", "Mittlere Überschrift", "## Überschrift 2\n\n", 0xFFF0B0),
-            new WikiEntry("### Überschrift 3", "Kleine Überschrift", "### Überschrift 3\n\n", 0xFFFFFF),
-            new WikiEntry("**Fett**", "Fetter Text", "**Fett**", 0xFFFFFF),
-            new WikiEntry("*Kursiv*", "Schräger Text", "*Kursiv*", 0xE8E0F0),
-            new WikiEntry("~~Durchstrich~~", "Durchgestrichen", "~~Durchgestrichen~~", 0xC0B8C8),
-            new WikiEntry("`Code`", "Monospace Code", "`Code`", 0xA6FFA6)
+        new WikiPage("Formatting", List.of(
+            new WikiEntry("# Heading 1", "Large heading", "# Heading 1\n\n", 0xFFD54F),
+            new WikiEntry("## Heading 2", "Medium heading", "## Heading 2\n\n", 0xFFF0B0),
+            new WikiEntry("### Heading 3", "Small heading", "### Heading 3\n\n", 0xFFFFFF),
+            new WikiEntry("**Bold**", "Bold text", "**Bold text**", 0xFFFFFF),
+            new WikiEntry("*Italic*", "Italic text", "*Italic text*", 0xE8E0F0),
+            new WikiEntry("~~Strike~~", "Strikethrough text", "~~Strikethrough~~", 0xC0B8C8),
+            new WikiEntry("`Code`", "Monospace code", "`inline code`", 0xA6FFA6)
         )),
-        new WikiPage("Farben", List.of(
-            new WikiEntry("[gold] Gold [/]", "Goldene Schrift", "[gold]Text[/]", 0xFFAA00),
-            new WikiEntry("[red] Rot [/]", "Rote Schrift", "[red]Text[/]", 0xFF6B6B),
-            new WikiEntry("[green] Grün [/]", "Grüne Schrift", "[green]Text[/]", 0x6BFF6B),
-            new WikiEntry("[blue] Blau [/]", "Blaue Schrift", "[blue]Text[/]", 0x6BB5FF),
-            new WikiEntry("[yellow] Gelb [/]", "Gelbe Schrift", "[yellow]Text[/]", 0xFFFF6B),
-            new WikiEntry("[purple] Lila [/]", "Violette Schrift", "[purple]Text[/]", 0xFF80FF),
-            new WikiEntry("[#FFAA00] Hex", "Eigene Hex-Farbe", "[#FFAA00]Farbe[/]", 0xFFAA00)
+        new WikiPage("Colors", List.of(
+            new WikiEntry("[gold] Gold [/]", "Gold text color", "[gold]Gold text[/]", 0xFFAA00),
+            new WikiEntry("[red] Red [/]", "Red text color", "[red]Red text[/]", 0xFF6B6B),
+            new WikiEntry("[green] Green [/]", "Green text color", "[green]Green text[/]", 0x6BFF6B),
+            new WikiEntry("[blue] Blue [/]", "Blue text color", "[blue]Blue text[/]", 0x6BB5FF),
+            new WikiEntry("[yellow] Yellow [/]", "Yellow text color", "[yellow]Yellow text[/]", 0xFFFF6B),
+            new WikiEntry("[purple] Purple [/]", "Purple text color", "[purple]Purple text[/]", 0xFF80FF),
+            new WikiEntry("[#FFAA00] Hex", "Custom hex color", "[#FFAA00]Hex color[/]", 0xFFAA00)
         )),
-        new WikiPage("Listen", List.of(
-            new WikiEntry("- Liste", "Aufzählungspunkt", "- Eintrag\n", 0xFFFFFF),
-            new WikiEntry("1. Nummeriert", "Nummerierter Punkt", "1. Eintrag\n", 0xFFFFFF),
-            new WikiEntry("- [ ] Aufgabe", "Offene Checkbox", "- [ ] Offene Aufgabe\n", 0xFFD54F),
-            new WikiEntry("- [x] Erledigt", "Erledigte Checkbox", "- [x] Erledigte Aufgabe\n", 0x6BFF6B),
-            new WikiEntry("| Tabelle |", "Tabelle mit 2 Spalten", "| Name | Wert |\n| :--- | ---: |\n| Eisen | 64 |\n\n", 0x80DEEA),
-            new WikiEntry("--- Trennlinie", "Horizontale Linie", "---\n\n", 0xC0B8C8),
-            new WikiEntry("> Zitat", "Blockzitat", "> Wichtiges Zitat\n\n", 0x80DEEA)
+        new WikiPage("Lists", List.of(
+            new WikiEntry("- Bullet", "Bullet list item", "- List item\n", 0xFFFFFF),
+            new WikiEntry("1. Numbered", "Numbered list item", "1. Numbered item\n", 0xFFFFFF),
+            new WikiEntry("- [ ] Task", "Open checkbox task", "- [ ] Open task\n", 0xFFD54F),
+            new WikiEntry("- [x] Done", "Completed task", "- [x] Completed task\n", 0x6BFF6B),
+            new WikiEntry("| Table |", "2-column data table", "| Item | Amount |\n| :--- | ---: |\n| Iron | 64 |\n\n", 0x80DEEA),
+            new WikiEntry("--- Divider", "Horizontal divider line", "---\n\n", 0xC0B8C8),
+            new WikiEntry("> Quote", "Blockquote text", "> Important quote\n\n", 0x80DEEA)
         )),
         new WikiPage("Layout", List.of(
-            new WikiEntry("<center>", "Zentrierter Block", "<center>\nZentrierter Text\n</center>\n\n", 0xFFD54F),
-            new WikiEntry("<div align=..>", "Rechtsbündiger Block", "<div align=\"right\">\nRechtsbündig\n</div>\n\n", 0xFFD54F),
-            new WikiEntry("``` Codeblock", "Codeblock mit Rahmen", "```\nCode\n```\n\n", 0xA6FFA6),
-            new WikiEntry("![Bild](URL)", "Medien-Platzhalter", "![Alt-Text](https://example.com/image.png)\n\n", 0x6BB5FF),
-            new WikiEntry("[reset]", "Farben zurücksetzen", "[reset]", 0xC0B8C8)
+            new WikiEntry("<center>", "Centered text block", "<center>\nCentered text\n</center>\n\n", 0xFFD54F),
+            new WikiEntry("<div align=..>", "Right-aligned block", "<div align=\"right\">\nRight-aligned\n</div>\n\n", 0xFFD54F),
+            new WikiEntry("``` Codeblock", "Code block with box", "```\nCode block\n```\n\n", 0xA6FFA6),
+            new WikiEntry("![Image](URL)", "Media placeholder", "![Image description](https://example.com/image.png)\n\n", 0x6BB5FF),
+            new WikiEntry("[reset]", "Reset text colors", "[reset]", 0xC0B8C8)
         ))
     );
 
@@ -132,7 +132,7 @@ public final class MarkdownPadScreen extends Screen {
             wikiToggleButton = addRenderableWidget(
                 Button.builder(Component.literal("◀"), button -> toggleWiki())
                     .bounds(left + 118, top + 8, 14, 16)
-                    .tooltip(Tooltip.create(Component.literal("Wiki einklappen")))
+                    .tooltip(Tooltip.create(Component.literal("Collapse Wiki")))
                     .build()
             );
             updateWikiButtons();
@@ -140,7 +140,7 @@ public final class MarkdownPadScreen extends Screen {
             wikiToggleButton = addRenderableWidget(
                 Button.builder(Component.literal("Wiki ▶"), button -> toggleWiki())
                     .bounds(left + 8, top + 8, 48, 16)
-                    .tooltip(Tooltip.create(Component.literal("Wiki aufklappen")))
+                    .tooltip(Tooltip.create(Component.literal("Expand Wiki")))
                     .build()
             );
             wikiPrevButton = null;
@@ -148,7 +148,7 @@ public final class MarkdownPadScreen extends Screen {
         }
 
         String currentTitle = titleBox == null ? initialTitle : titleBox.getValue();
-        titleBox = addRenderableWidget(new EditBox(font, left + wikiOffset + 14, top + 30, 210, 18, Component.translatable("screen.mcdisplays.markdown_pad.title_label")));
+        titleBox = addRenderableWidget(new EditBox(font, left + wikiOffset + 14, top + 39, 210, 18, Component.translatable("screen.mcdisplays.markdown_pad.title_label")));
         titleBox.setMaxLength(MarkdownPadItemData.maxTitleLength());
         titleBox.setHint(Component.translatable("screen.mcdisplays.markdown_pad.placeholder.title"));
         titleBox.setValue(currentTitle);
@@ -159,9 +159,9 @@ public final class MarkdownPadScreen extends Screen {
             new MultiLineEditBox(
                 font,
                 left + wikiOffset + 14,
-                top + 63,
+                top + 73,
                 210,
-                142,
+                132,
                 Component.translatable("screen.mcdisplays.markdown_pad.markdown_label"),
                 Component.translatable("screen.mcdisplays.markdown_pad.placeholder.markdown")
             )
@@ -173,7 +173,7 @@ public final class MarkdownPadScreen extends Screen {
         sizeButton = addRenderableWidget(
             Button.builder(currentSizeLabel(), button -> cyclePreviewSize())
                 .bounds(left + screenWidth - 52, top + 8, 44, 16)
-                .tooltip(Tooltip.create(Component.literal("Display-Größe für Vorschau wechseln")))
+                .tooltip(Tooltip.create(Component.literal("Cycle preview display size")))
                 .build()
         );
 
@@ -330,8 +330,11 @@ public final class MarkdownPadScreen extends Screen {
         int titleW = font.width(title);
         guiGraphics.drawString(font, title, editorCenterX - titleW / 2, top + 12, 0xF4EEFF, false);
 
-        // Markdown input label
-        guiGraphics.drawString(font, Component.translatable("screen.mcdisplays.markdown_pad.markdown_label"), left + wikiOffset + 14, top + 52, 0xDDD4EA, false);
+        // Headline / Title label above title box
+        guiGraphics.drawString(font, Component.translatable("screen.mcdisplays.markdown_pad.title_label"), left + wikiOffset + 14, top + 29, 0xDDD4EA, false);
+
+        // Markdown input label above markdown box
+        guiGraphics.drawString(font, Component.translatable("screen.mcdisplays.markdown_pad.markdown_label"), left + wikiOffset + 14, top + 62, 0xDDD4EA, false);
 
         // Preview header label
         guiGraphics.drawString(font, Component.translatable("screen.mcdisplays.markdown_pad.preview_label"), previewAreaX + 4, top + 12, 0xDDD4EA, false);
@@ -360,7 +363,7 @@ public final class MarkdownPadScreen extends Screen {
             for (int i = 0; i < entries.size(); i++) {
                 int itemY = wikiY + i * 25;
                 if (mouseX >= wikiX && mouseX <= wikiX + wikiW && mouseY >= itemY && mouseY < itemY + 23) {
-                    guiGraphics.renderTooltip(font, Component.literal("Klick zum Einfügen:\n" + entries.get(i).snippet().strip()), (int) mouseX, (int) mouseY);
+                    guiGraphics.renderTooltip(font, Component.literal("Click to insert:\n" + entries.get(i).snippet().strip()), (int) mouseX, (int) mouseY);
                     break;
                 }
             }
@@ -388,7 +391,7 @@ public final class MarkdownPadScreen extends Screen {
             int blocksWide = PREVIEW_SIZES[sizeIndex][0];
             int blocksHigh = PREVIEW_SIZES[sizeIndex][1];
             String sizeStr = blocksWide + "x" + blocksHigh + " Display";
-            String hintStr = "(Kein Inhalt)";
+            String hintStr = "(No content)";
             int sw = font.width(sizeStr);
             int hw = font.width(hintStr);
             guiGraphics.drawString(font, sizeStr, (int) (originX + (renderedW - sw) / 2.0F), (int) (originY + renderedH / 2.0F - 9), 0x77B6A7D3, false);
@@ -423,7 +426,8 @@ public final class MarkdownPadScreen extends Screen {
     }
 
     private void rebuildPreview() {
-        String titleText = titleBox == null ? initialTitle : titleBox.getValue();
+        String rawTitle = titleBox == null ? initialTitle : titleBox.getValue();
+        String titleText = MarkdownPadItemData.getEffectiveTitle(rawTitle, null);
         String markdownText = markdownBox == null ? initialMarkdown : markdownBox.getValue();
         int blocksWide = PREVIEW_SIZES[sizeIndex][0];
         int blocksHigh = PREVIEW_SIZES[sizeIndex][1];

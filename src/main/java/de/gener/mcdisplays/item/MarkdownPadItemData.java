@@ -58,7 +58,20 @@ public final class MarkdownPadItemData {
     }
 
     public static DisplayDocument toDisplayDocument(ItemStack stack) {
-        return new DisplayDocument(getTitle(stack), List.of(getMarkdown(stack)));
+        return new DisplayDocument(getEffectiveTitle(getTitle(stack), stack), List.of(getMarkdown(stack)));
+    }
+
+    public static String getEffectiveTitle(String configuredTitle, ItemStack stack) {
+        if (configuredTitle != null && !configuredTitle.isBlank()) {
+            if (configuredTitle.equalsIgnoreCase("none") || configuredTitle.equalsIgnoreCase("[none]")) {
+                return "";
+            }
+            return configuredTitle.trim();
+        }
+        if (stack != null && stack.has(DataComponents.CUSTOM_NAME)) {
+            return stack.getHoverName().getString().trim();
+        }
+        return "Markdown Pad";
     }
 
     public static int maxTitleLength() {
