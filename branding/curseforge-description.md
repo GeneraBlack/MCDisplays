@@ -1,111 +1,128 @@
 # Short Description
 
-Turn books, Markdown notes, and MineColonies colony data into modular multiblock wall displays. Includes a full Colony Dashboard with live citizen, builder, health, death, statistics, and warehouse views.
+Modular multiblock wall displays for Minecraft! Build giant cinema screens with online video streaming & spatial audio, write rich formatted notes with the in-game Markdown Pad, or track live MineColonies colony data and AE2 Crafting CPUs directly on your walls.
 
 # Long Description
 
-MC Displays adds clean, rectangular multiblock display panels for Minecraft. Build a display wall, insert a supported item, and the screen will render its content directly in the world.
+**MC Displays** brings clean, immersive, and fully modular multiblock display walls to Minecraft. Whether you want to build a massive **16x9 movie theater** with live online video streaming, design high-tech **colony control rooms**, monitor **AE2 autocrafting jobs**, or write formatted in-game signage with a **live-preview Markdown editor**, MC Displays does it all seamlessly.
 
-The mod is designed for practical survival use as well as colony management. Vanilla books work out of the box, the Markdown Pad lets players write custom screen content in-game, and optional MineColonies integration lets you surface builder resource lists, clipboard request data, and a full Colony Dashboard on large wall-mounted panels.
+Display panels automatically merge into seamless multiblock screens of any size (from a simple 1x1 plaque to giant stadium walls). Content scales cleanly to fit your display geometry, auto-refreshes in real time, and supports glowing neon illumination in the dark.
 
-**Available for Minecraft 1.20.1 (Forge) and 1.21.1 (NeoForge).**
+**Available for Minecraft 1.21.1 (NeoForge) and 1.20.1 (Forge).**
 
-## Features
+---
 
-- Build rectangular multiblock display walls from individual display panels.
-- Show written books, books and quills, Markdown Pads, MineColonies Resource Scrolls, MineColonies Clipboards, and the Colony Dashboard directly in the world.
-- Render larger multiblock displays with improved text scaling across the available screen area.
-- Refresh live content automatically on a configurable interval.
-- Turn pages manually with an empty hand when enabled.
-- Protect displays with ownership and private mode.
-- Illuminate displays with Glow Ink Sacs for bright text, outline rendering, and a visible lit frame.
-- Configure refresh interval and maximum display size through the server config.
-- Keep colony and builder links separated from item data, which is especially useful on multiplayer servers with multiple colonies.
+## ✨ Flagship Features
 
-## Cinema Projector & Video Streaming
+### 🎬 Cinema Projector & Video Streaming (Powered by WATERMeDIA)
+Turn any display wall into a real in-game cinema!
+- **Real-Time Video Playback:** Stream YouTube, Twitch, Kick, direct MP4, WebM, and HLS (`.m3u8`) live streams straight onto your screen walls.
+- **Cinema Remote Linking:** Simply right-click a display cluster with the Cinema Remote, then right-click your Cinema Projector to bind them wirelessly.
+- **Borderless Fullscreen Auto-Scaling:** Videos dynamically adapt to your wall's aspect ratio and resolution without unsightly letterbox borders.
+- **Nighttime Cinema Lighting:** Displays render cinema feeds at full brightness in the dark for an authentic theater experience.
+- **Modern 480x320 Player Interface:** Enjoy a spacious GUI featuring live status badges (Link / Playback / Engine), a 1-click clipboard paste button (`Paste`), quick clear (`X`), and instant playback diagnostics.
 
-Build real movie theaters and media lounges in Minecraft:
+### 🔊 3D Spatial Cinema Acoustics
+- **Toggleable Sound Origin:** Choose whether sound emanates directly from the **Cinema Projector block** (booth speaker) or the **Screen wall** via a simple 1-click toggle in the GUI.
+- **Continuous Camera-Independent Ticking:** Walk freely around the room or look away—audio volume and spatial falloff continue to track your movement smoothly without cutting out.
+- **Natural Linear Distance Falloff:** Sound fades realistically with distance rather than abruptly dropping to zero.
+- **Zero-Latency Real-Time Controls:** Volume (0–100%) and Range (8–128m) sliders update instantly in your headphones as you drag them.
 
-- **Cinema Projector Block:** Stream online videos and streams onto any size modular screen cluster.
-- **Cinema Remote Control:** Bind a screen to a projector with a simple right-click link.
-- **Powered by WATERMeDIA:** Play direct MP4, WebM, HLS (`.m3u8`), Twitch, Kick, and YouTube (with the WATERMeDIA YouTube addon).
-- **Spatial Cinema Acoustics:** Realistic 3D distance falloff, live volume (0–100%) and range (8–128m) adjustments, and toggleable sound origin (Projector block or Screen wall).
-- **Modern 480x320 GUI:** Live status badges, clipboard paste button, quick-clear, and diagnostics.
+---
 
-## Colony Dashboard
+### 📝 Markdown Pad & In-Game Visual Editor
+The Markdown Pad is a dedicated handheld authoring tool for creating beautiful custom screen documents.
+- **Live WYSIWYG Preview:** View your rendered document side-by-side with your text editor in real time.
+- **Syntax Wiki Sidebar:** Built-in multi-page documentation with 1-click syntax insertion for headers, bold, italics, tables, and colors.
+- **Rich Typography & Formatting:**
+  - Headers (`#` to `######`), blockquotes, ordered lists, unordered lists, and task checkboxes (`- [x]`)
+  - Tables with pipe syntax (`| header |`) and column alignment
+  - Code blocks (` ``` `) and inline code (` `code` `)
+  - Color tags: `[red]`, `[green]`, `[blue]`, `[gold]`, hex codes (`[color=#ff8800]`), and reset tags (`[/]`)
+- **Remote Image Loading:** Embed web images with `<img src="https://..." width="100" />`. Images download asynchronously, cache safely to disk, and respect configurable domain blacklists.
 
-The Colony Dashboard is a dedicated item for displaying live MineColonies colony data on your display walls. It offers six switchable views:
+---
 
-- **Citizens** — Full citizen roster grouped by job, showing name, age, and gender.
-- **Builders** — Each builder with their current work order, target level, and build progress.
-- **Sick** — Sick citizens with their disease and home location.
-- **Deaths** — Death log from the colony's graveyard and event records.
-- **Statistics** — Colony-wide production and combat totals (ores mined, blocks placed, mobs killed, and more).
-- **Warehouse** — Warehouse buildings with their level and capacity status.
+### 🏛️ Colony Dashboard (MineColonies Integration)
+Keep tabs on your growing civilization with a dedicated wall-mounted monitoring station!
+- **Six Live Views:**
+  - **Citizens:** Full population directory grouped by profession, including citizen names, age, and gender.
+  - **Builders:** Active builder work orders, target building levels, and real-time construction percentages.
+  - **Sick:** Directory of sick citizens, their diagnosed diseases, and home coordinates.
+  - **Deaths:** Colony graveyard log recording citizen casualties and circumstances.
+  - **Statistics:** Global colony metrics (ores mined, blocks placed, enemies slain, food consumed).
+  - **Warehouse:** Colony warehouse building levels and storage capacity utilization.
+- **How to Use:**
+  1. Sneak-right-click any MineColonies building to link the dashboard item.
+  2. Right-click in your hand to cycle between the six views.
+  3. Insert it into a display wall—it continuously auto-refreshes every 5 seconds.
 
-**How to use:**
-1. Sneak-right-click any MineColonies building to link the dashboard to that colony.
-2. Right-click to cycle through the six display modes.
-3. Place the dashboard into a display panel — it auto-refreshes every 5 seconds.
-4. The current mode and page survive server restarts.
+---
 
-## Markdown Pad
+### ⚡ AE2 Crafting-CPU Monitor (Applied Energistics 2 Integration)
+Monitor your ME Network's crafting operations at a glance!
+- **Live Crafting Status:** Displays active crafting jobs, storage capacity, and coprocessor counts for all connected Crafting CPUs.
+- **Visual Alert System:** Jobs exceeding warning or alert thresholds change colors automatically so bottlenecks are spotted instantly.
+- **How to Use:** Sneak-right-click any ME Network block (cables, controller, or crafting units) to link, then insert the item into any display panel.
 
-The Markdown Pad is a dedicated item for writing custom display content directly in Minecraft.
+---
 
-- Edit text in an in-game screen with a live preview.
-- Store title and content inside the item.
-- Place the item into a display just like a book.
+### 📖 Vanilla Book & Quill Support
+- Written Books and Books & Quills can be placed directly into any display panel.
+- Pages scale smoothly across the multiblock wall.
+- Turn pages manually with an empty hand (right-click right half for next page, left half for previous page).
 
-## Markdown Support
+---
 
-Markdown rendering is tuned for in-world display readability.
+## 🛠️ Display Controls & Quality of Life
 
-- Headings using # and underline-style headings
-- Ordered lists, unordered lists, and task lists
-- Nested blockquotes
-- Bold, italic, strikethrough, and inline code
-- Fenced code blocks with preserved spacing
-- Pipe tables with alignment support
-- Links converted into readable text output
-- Color tags such as [red], [green], [blue], [color=#ff8800], [#55ff55], and [/]
+- **Multiblock Assembly:** Place display panels adjacent to each other on the same wall plane. They automatically merge into a single seamless screen.
+- **Inserting Items:** Right-click a display with any supported item (Markdown Pad, Books, Colony Dashboard, AE2 Monitor) to mount it.
+- **Glow & Neon Frame:** Right-click with a **Glow Ink Sac** to illuminate text with full-brightness outlines and a glowing frame border. Right-click with a standard **Ink Sac** to turn illumination off.
+- **Accessing Settings:** Sneak-right-click any display panel with an empty hand to open the display management menu.
+- **Multiplayer Protection & Privacy:**
+  - Displays are automatically claimed by the player who first places content into them.
+  - Owners can toggle **Private Mode** to prevent other players from removing items, turning pages, or modifying settings.
 
-This makes the Markdown Pad useful for signs, dashboards, colony planning boards, task trackers, and wall-mounted information panels.
+---
 
-## MineColonies Integration
+## 🔨 Crafting Recipes
 
-- Display MineColonies Resource Scroll data.
-- Display MineColonies Clipboard request data.
-- Display live colony data with the Colony Dashboard (Citizens, Builders, Sick, Deaths, Statistics, Warehouse).
-- Refresh live colony information instead of relying on stale snapshots.
+All blocks and tools are fully craftable in survival mode:
+- **Display Panel:** 4 Smooth Stone, 4 Glass Panes, and 1 Redstone Dust (yields 4 panels).
+- **Cinema Projector:** 4 Smooth Stone, 2 Redstone Lamps, 2 Iron Ingots, and 1 Daylight Detector.
+- **Cinema Remote:** 4 Iron Ingots, 1 Redstone Dust, and 1 Ender Pearl.
+- **Markdown Pad:** 1 Book, 1 Feather, 1 Ink Sac, and 1 Redstone Dust.
+- **Colony Dashboard:** 1 MineColonies Clipboard (or Book), 4 Iron Ingots, and 1 Redstone Dust.
+- **AE2 Crafting-CPU Monitor:** 1 Illuminated Panel (or Quartz Glass), 4 Iron Ingots, and 1 Certus Quartz / Fluix Dust.
 
-MineColonies support is optional, but required for Resource Scroll, Clipboard, and Colony Dashboard displays.
+---
 
-## Controls
+## ⚙️ Configuration
 
-- Right-click a display with a supported item to insert it directly.
-- Right-click with a Glow Ink Sac to enable illuminated mode.
-- Right-click with an Ink Sac to disable illuminated mode.
-- Sneak-right-click to open the source menu.
-- Use an empty hand to turn pages when manual page turning is enabled.
+MC Displays provides full server and client configuration options:
+- **Display Dimensions:** Configure the maximum allowable multiblock width and height (default up to 16x16 or unlimited).
+- **Refresh Rates:** Customize the automatic update interval for live colony and network feeds.
+- **Media Safety:** Set domain blacklists to control which external image and video hosting domains can be loaded on client screens.
+- **Manual Page Turning:** Toggle whether players can flip through pages with empty-hand clicks.
 
-## Multiplayer
+---
 
-- Displays are claimed automatically by the first player who edits them.
-- Private displays can only be edited by their owner.
-- Ownership, privacy, and illumination are shared across the whole rectangular multiblock.
+## 🔌 Compatibility & Requirements
 
-## Compatibility
+| Minecraft Version | Mod Loader | Recommended Java |
+| :--- | :--- | :--- |
+| **1.21.1** | **NeoForge** (21.1+) | Java 21 |
+| **1.20.1** | **Forge** (47.4+) | Java 17 |
 
-- Minecraft 1.20.1 (Forge 47.4.20)
-- Minecraft 1.21.1 (NeoForge 21.1)
+### Optional Integrations:
+- **[WATERMeDIA](https://www.curseforge.com/minecraft/mc-mods/watermedia):** Required for online video streaming and cinema playback. (Add the WATERMeDIA YouTube addon for YouTube streams).
+- **[MineColonies](https://www.curseforge.com/minecraft/mc-mods/minecolonies):** Required for Resource Scrolls, Clipboards, and the Colony Dashboard.
+- **[Applied Energistics 2](https://www.curseforge.com/minecraft/mc-mods/applied-energistics-2):** Required for the AE2 Crafting-CPU Monitor.
 
-## Credits
+---
 
-Special thanks to **Bludeuwedd**, the creator of the [Colony Dashboard](https://www.curseforge.com/minecraft/mc-mods/colony-dashboard) mod. The Colony Dashboard feature in MC Displays was built in collaboration with Bludeuwedd, who generously agreed to have their work integrated into this mod. Thank you for your contribution to the MineColonies community!
+## ❤️ Credits & Acknowledgments
 
-## Notes
-
-Clipboard and Colony Dashboard content is generated from live MineColonies data, so the display always reflects the current state of the linked colony instead of a static snapshot.
-
-Markdown support is intentionally tuned for practical in-world display use rather than full browser-grade rendering.
+- Special thanks to **Bludeuwedd**, creator of the original [Colony Dashboard](https://www.curseforge.com/minecraft/mc-mods/colony-dashboard) mod, for collaborating and granting permission to integrate the Colony Dashboard into MC Displays.
+- Special thanks to the **WATERMeDIA** development team for their multimedia playback framework.
