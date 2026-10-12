@@ -60,5 +60,9 @@ public interface IVideoPlayer {
         return false;
     }
 
+    default String getFailureReason() {
+        return "";
+    }
+
     void release();
 }

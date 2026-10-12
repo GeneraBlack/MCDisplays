@@ -87,6 +87,7 @@ dependencies {
     }
     compileOnly "maven.modrinth:watermedia:2.1.37"
     localRuntime "maven.modrinth:watermedia:2.1.37"
+    localRuntime "maven.modrinth:watermedia-yt-plugin:2.1.2"
     localRuntime "com.ldtteam:minecolonies:${project.minecolonies_version}"
     localRuntime "com.ldtteam:structurize:${project.structurize_version}"
     localRuntime "com.ldtteam:blockui:${project.blockui_version}"

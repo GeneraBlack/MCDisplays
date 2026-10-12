@@ -18,6 +18,10 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
     private long lastSeenTime;
     private boolean started;
     private boolean released;
+    private boolean failed;
+    private String failureReason = "";
+    private boolean hasEverDecodedFrame;
+    private final long creationTime;
     private String lastLoggedState = "";
 
     public WaterMediaVideoPlayer(String url, boolean loop, String safeId) {
@@ -26,6 +30,7 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
         this.safeId = safeId;
         this.location = ResourceLocation.fromNamespaceAndPath(McDisplaysMod.MODID, "vtex_" + safeId);
         this.lastSeenTime = System.currentTimeMillis();
+        this.creationTime = System.currentTimeMillis();
 
         McDisplaysMod.LOGGER.info("Created WaterMediaVideoPlayer [{}] for URL: {}", safeId, url);
         try {
@@ -36,12 +41,13 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
             start();
         } catch (Throwable t) {
             McDisplaysMod.LOGGER.error("Failed to initialize WaterMedia VideoPlayer for {}", url, t);
+            markFailed("Initialisierung der Video-Engine fehlgeschlagen");
         }
     }
 
     @Override
     public void start() {
-        if (player != null && !started && !released) {
+        if (player != null && !started && !released && !failed) {
             try {
                 URI uri;
                 try {
@@ -55,6 +61,7 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
                 started = true;
             } catch (Throwable t) {
                 McDisplaysMod.LOGGER.error("Failed to start WaterMedia playback for {}", url, t);
+                markFailed("Start fehlgeschlagen: " + t.getMessage());
             }
         }
     }
@@ -111,12 +118,23 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
 
     @Override
     public boolean isPlaying() {
-        return player != null && !released && player.isPlaying();
+        return player != null && !released && !failed && player.isPlaying();
     }
 
     @Override
     public boolean isReady() {
-        return player != null && !released && player.isReady();
+        if (player == null || released || failed) {
+            return false;
+        }
+        if (player.isBroken() || player.isEnded()) {
+            return false;
+        }
+        String state = getStateName();
+        if ("OPENING".equalsIgnoreCase(state) || "NOTHING_SPECIAL".equalsIgnoreCase(state) ||
+            "STOPPED".equalsIgnoreCase(state) || "ERROR".equalsIgnoreCase(state) || "ENDED".equalsIgnoreCase(state)) {
+            return false;
+        }
+        return player.isReady() && player.width() > 1 && player.height() > 1 && player.texture() > 0;
     }
 
     @Override
@@ -126,7 +144,12 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
 
     @Override
     public boolean isBroken() {
-        return player == null || released || player.isBroken();
+        return player == null || released || failed || player.isBroken();
+    }
+
+    @Override
+    public String getFailureReason() {
+        return failureReason;
     }
 
     @Override
@@ -151,7 +174,7 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
 
     @Override
     public void tickAudio(double distanceToListener, int targetVolume, int maxDistance) {
-        if (player == null || released) {
+        if (player == null || released || failed) {
             return;
         }
 
@@ -201,11 +224,42 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
             if (texture != null) {
                 texture.updateId(player.texture());
             }
+
+            if (player.width() > 1 && player.height() > 1) {
+                hasEverDecodedFrame = true;
+            }
+
             String current = getStateName();
             if (!current.equals(lastLoggedState)) {
                 lastLoggedState = current;
-                McDisplaysMod.LOGGER.info("WaterMedia [{}] state changed -> {} (ready={}, broken={}, time={}/{}ms)",
-                    safeId, current, isReady(), isBroken(), getTime(), getDuration());
+                McDisplaysMod.LOGGER.info("WaterMedia [{}] state changed -> {} (ready={}, broken={}, time={}/{}ms, dim={}x{})",
+                    safeId, current, isReady(), isBroken(), getTime(), getDuration(), getWidth(), getHeight());
+            }
+
+            // Failure detection
+            if (!failed && player.isBroken()) {
+                markFailed("Videoplayer meldet internen Fehler (isBroken=true)");
+            } else if (!failed && player.isEnded() && !hasEverDecodedFrame) {
+                if (url.contains("youtube.com") || url.contains("youtu.be")) {
+                    markFailed("YouTube-Stream erfordert das WATERMeDIA-YouTube Addon");
+                } else {
+                    markFailed("Stream konnte nicht decodiert werden (Format / URL ungültig)");
+                }
+            } else if (!failed && !hasEverDecodedFrame && (System.currentTimeMillis() - creationTime > 15000L)) {
+                markFailed("Zeitüberschreitung beim Laden des Streams (Timeout nach 15s)");
+            }
+        }
+    }
+
+    private void markFailed(String reason) {
+        this.failed = true;
+        this.failureReason = reason;
+        McDisplaysMod.LOGGER.warn("WaterMedia [{}] playback failure: {}", safeId, reason);
+        if (player != null) {
+            try {
+                player.setRepeatMode(false);
+                player.stop();
+            } catch (Throwable ignored) {
             }
         }
     }

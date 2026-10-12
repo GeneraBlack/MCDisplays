@@ -141,17 +141,18 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
         }
 
         if (player != null && player.isBroken()) {
-            String header = "[CINEMA ERROR] Wiedergabe fehlgeschlagen";
-            drawVideoPlaceholder(pose, bufferSource, x1, y1, x2, y2, header, op.url(), player, true, videoLight);
+            String header = "[CINEMA FEHLER] Wiedergabe fehlgeschlagen";
+            drawVideoPlaceholder(poseStack, bufferSource, x1, y1, x2, y2, header, op.url(), player, true, videoLight);
         } else {
             String stateDesc = (player != null && player.isBuffering()) ? "Puffert..." : "Lade Stream...";
             String header = "[CINEMA] " + (op.title().isBlank() ? stateDesc : op.title() + " (" + stateDesc + ")");
-            drawVideoPlaceholder(pose, bufferSource, x1, y1, x2, y2, header, op.url(), player, false, videoLight);
+            drawVideoPlaceholder(poseStack, bufferSource, x1, y1, x2, y2, header, op.url(), player, false, videoLight);
         }
     }
 
-    private void drawVideoPlaceholder(Matrix4f pose, MultiBufferSource bufferSource, float x1, float y1, float x2, float y2,
+    private void drawVideoPlaceholder(PoseStack poseStack, MultiBufferSource bufferSource, float x1, float y1, float x2, float y2,
                                      String header, String url, @Nullable IVideoPlayer player, boolean broken, int light) {
+        Matrix4f pose = poseStack.last().pose();
         VertexConsumer rects = bufferSource.getBuffer(RenderType.debugQuads());
         drawRectDirect(rects, pose, x1, y1, x2, y2, 0xFF0D0F14);
 
@@ -164,16 +165,21 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
 
         float boxWidth = x2 - x1;
         float boxHeight = y2 - y1;
-        float maxTextW = Math.max(8.0F, boxWidth - 8.0F);
+        float maxTextW = Math.max(8.0F, boxWidth - 12.0F);
 
         List<String> lines = new ArrayList<>();
         lines.add(truncate(header, maxTextW));
         if (player != null) {
-            String stateStr = player.getStateName();
-            long timeMs = player.getTime();
-            long durMs = player.getDuration();
-            lines.add(truncate(String.format("Status: %s | Ready: %b | Buffer: %b | %d/%d ms",
-                stateStr, player.isReady(), player.isBuffering(), timeMs, durMs), maxTextW));
+            String reason = player.getFailureReason();
+            if (broken && !reason.isEmpty()) {
+                lines.add(truncate(reason, maxTextW));
+            } else {
+                String stateStr = player.getStateName();
+                long timeMs = player.getTime();
+                long durMs = player.getDuration();
+                lines.add(truncate(String.format("Status: %s | Buffer: %b | %d/%d ms",
+                    stateStr, player.isBuffering(), timeMs, durMs), maxTextW));
+            }
         } else {
             lines.add(truncate("Initialisiere Video-Engine...", maxTextW));
         }
@@ -183,25 +189,30 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
         }
 
         if (broken) {
-            lines.add(truncate("Prüfe URL / Videoformat im Projektor", maxTextW));
+            lines.add(truncate("Format: Direct MP4/WebM/HLS (m3u8), Twitch, Kick", maxTextW));
+            lines.add(truncate("Einstellungen am Kino-Projektor anpassen", maxTextW));
         }
 
-        int maxLines = Math.max(1, (int) (boxHeight / (font.lineHeight + 1.0F)));
+        int maxLines = Math.max(1, (int) (boxHeight / (font.lineHeight + 3.0F)));
         while (lines.size() > maxLines) {
             lines.remove(lines.size() - 1);
         }
 
-        float totalHeight = lines.size() * (font.lineHeight + 2.0F) - 2.0F;
+        float totalHeight = lines.size() * (font.lineHeight + 3.0F) - 3.0F;
         float startY = y1 + Math.max(1.0F, (boxHeight - totalHeight) / 2.0F);
 
+        poseStack.pushPose();
+        poseStack.translate(0.0F, 0.0F, 0.05F);
+        Matrix4f textPose = poseStack.last().pose();
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
             float textW = font.width(line);
             float tx = x1 + Math.max(2.0F, (boxWidth - textW) / 2.0F);
-            float ty = startY + i * (font.lineHeight + 2.0F);
+            float ty = startY + i * (font.lineHeight + 3.0F);
             int color = (i == 0) ? headerColor : (broken ? 0xFFFFAAAA : 0xFFB6A7D3);
-            font.drawInBatch(Component.literal(line), tx, ty, color, false, pose, bufferSource, Font.DisplayMode.POLYGON_OFFSET, 0, light);
+            font.drawInBatch(Component.literal(line), tx, ty, color, false, textPose, bufferSource, Font.DisplayMode.POLYGON_OFFSET, 0, light);
         }
+        poseStack.popPose();
     }
 
     private String truncate(String text, float maxWidth) {
