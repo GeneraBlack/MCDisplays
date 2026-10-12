@@ -772,12 +772,7 @@ public final class MinecoloniesReflectionCompat {
             return List.of("");
         }
 
-        List<String> pages = new ArrayList<>();
-        for (int index = 0; index < sanitized.size(); index += linesPerPage) {
-            int end = Math.min(sanitized.size(), index + linesPerPage);
-            pages.add(String.join("\n", sanitized.subList(index, end)));
-        }
-        return pages;
+        return List.of(String.join("\n", sanitized));
     }
 
     static String componentToString(Object object) {

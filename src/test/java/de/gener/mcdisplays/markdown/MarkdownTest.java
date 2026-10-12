@@ -252,4 +252,64 @@ public class MarkdownTest {
         assertTrue(MediaPolicy.isAllowed("www.youtube.com/watch?v=123"));
         assertTrue(MediaPolicy.isAllowed("https://www.youtube.com/watch?v=123"));
     }
+
+    @Test
+    void testSoftLineBreakPreservedAsLineBreak() {
+        String md = "Line 1\nLine 2\nLine 3";
+        List<Block> blocks = MarkdownParser.parse(md);
+        assertEquals(1, blocks.size());
+        assertInstanceOf(Block.Text.class, blocks.get(0));
+
+        Block.Text textBlock = (Block.Text) blocks.get(0);
+        long breakCount = textBlock.spans().stream().filter(Block.Span::isBreak).count();
+        assertEquals(2, breakCount, "Soft line breaks should emit LINE_BREAK spans");
+
+        // Layout on wide 3x3 screen should preserve each line on its own row rather than merging into one line
+        List<LayoutPage> pages = MarkdownLayout.layout("Title", md, 3, 3, TextMetrics.APPROXIMATE);
+        assertEquals(1, pages.size());
+        List<LayoutPage.TextOp> textOps = pages.get(0).ops().stream()
+            .filter(op -> op instanceof LayoutPage.TextOp)
+            .map(op -> (LayoutPage.TextOp) op)
+            .filter(op -> !"Title".equals(op.text))
+            .toList();
+
+        assertEquals(3, textOps.size(), "Each line should be laid out on its own line box");
+        assertEquals("Line 1", textOps.get(0).text);
+        assertEquals("Line 2", textOps.get(1).text);
+        assertEquals("Line 3", textOps.get(2).text);
+        assertTrue(textOps.get(1).y > textOps.get(0).y, "Line 2 should be below Line 1");
+        assertTrue(textOps.get(2).y > textOps.get(1).y, "Line 3 should be below Line 2");
+    }
+
+    @Test
+    void testResourceScrollLayoutOnLargeDisplay() {
+        String md = """
+            Col #1: Adlon Hotel
+            
+            11/0 Birch Fence
+            66/0 Cobblestone Slab
+            13/0 Composted Dirt
+            4/0 Dandelion
+            125/0 Dirt
+            8/0 Flower Pot
+            44/0 Framed Spruce Planks
+            4/0 Item Frame
+            """;
+        List<LayoutPage> pages = MarkdownLayout.layout("Builder -1864,82,355", md, 3, 3, TextMetrics.APPROXIMATE);
+        assertEquals(1, pages.size(), "All items should fit on 1 page of a 3x3 display");
+
+        List<LayoutPage.TextOp> ops = pages.get(0).ops().stream()
+            .filter(op -> op instanceof LayoutPage.TextOp)
+            .map(op -> (LayoutPage.TextOp) op)
+            .filter(op -> !op.text.startsWith("Builder"))
+            .toList();
+
+        // 1 colony header + 8 resource items = 9 text ops
+        assertEquals(9, ops.size(), "Resource scroll lines should not be concatenated together");
+        assertEquals("Col #1: Adlon Hotel", ops.get(0).text);
+        assertEquals("11/0 Birch Fence", ops.get(1).text);
+        assertEquals("66/0 Cobblestone Slab", ops.get(2).text);
+        assertEquals("44/0 Framed Spruce Planks", ops.get(7).text);
+        assertEquals("4/0 Item Frame", ops.get(8).text);
+    }
 }

@@ -232,19 +232,14 @@ public final class Ae2CpuMonitorExtractor {
     }
 
     private static List<String> paginate(List<List<String>> blocks) {
-        List<String> pages = new ArrayList<>();
-        List<String> current = new ArrayList<>();
+        List<String> lines = new ArrayList<>();
         for (List<String> block : blocks) {
-            if (!current.isEmpty() && current.size() + block.size() > LINES_PER_PAGE) {
-                pages.add(String.join("\n", current));
-                current = new ArrayList<>();
-            }
-            current.addAll(block);
+            lines.addAll(block);
         }
-        if (!current.isEmpty()) {
-            pages.add(String.join("\n", current));
+        while (!lines.isEmpty() && lines.get(lines.size() - 1).isBlank()) {
+            lines.remove(lines.size() - 1);
         }
-        return pages.isEmpty() ? List.of("") : pages;
+        return lines.isEmpty() ? List.of("") : List.of(String.join("\n", lines));
     }
 
     private static String formatDuration(long seconds) {

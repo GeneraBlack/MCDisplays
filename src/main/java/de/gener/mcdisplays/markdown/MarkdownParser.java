@@ -399,9 +399,7 @@ public final class MarkdownParser {
                     }
                 } else if (node instanceof org.commonmark.node.Image image) {
                     emit("[" + plainText(image) + "]", 0);
-                } else if (node instanceof SoftLineBreak) {
-                    emit(" ", 0);
-                } else if (node instanceof HardLineBreak) {
+                } else if (node instanceof SoftLineBreak || node instanceof HardLineBreak) {
                     spans.add(new Block.Span(Block.Span.LINE_BREAK, -1, 0));
                 } else if (node instanceof HtmlInline inline) {
                     if (HTML_BR.matcher(inline.getLiteral()).matches()) {
