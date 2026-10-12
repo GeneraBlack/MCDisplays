@@ -1,13 +1,9 @@
 package de.gener.mcdisplays.client;
 
-import de.gener.mcdisplays.McDisplaysMod;
-import de.gener.mcdisplays.content.DisplayDocument;
-import de.gener.mcdisplays.content.DisplayRichText;
-import de.gener.mcdisplays.content.DisplayTextLayout;
-import de.gener.mcdisplays.content.MarkdownToDisplayFormatter;
 import de.gener.mcdisplays.item.MarkdownPadItemData;
+import de.gener.mcdisplays.markdown.LayoutPage;
+import de.gener.mcdisplays.markdown.MarkdownLayout;
 import de.gener.mcdisplays.network.SaveMarkdownPadPayload;
-import java.util.Objects;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -15,18 +11,22 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class MarkdownPadScreen extends Screen {
-    private static final ResourceLocation UNIFORM_FONT = ResourceLocation.withDefaultNamespace("uniform");
-    private static final int SCREEN_WIDTH = 420;
+    private static final int SCREEN_WIDTH = 440;
     private static final int SCREEN_HEIGHT = 244;
-    private static final int PREVIEW_BLOCKS_WIDE = 2;
-    private static final int PREVIEW_BLOCKS_HIGH = 1;
+    private static final int[][] PREVIEW_SIZES = {
+        {2, 1},
+        {1, 1},
+        {2, 2},
+        {3, 2},
+        {4, 2},
+        {4, 3}
+    };
 
     private final InteractionHand hand;
     private final String initialTitle;
@@ -34,9 +34,11 @@ public final class MarkdownPadScreen extends Screen {
 
     private EditBox titleBox;
     private MultiLineEditBox markdownBox;
+    private Button sizeButton;
     private Button previousPageButton;
     private Button nextPageButton;
-    private List<DisplayTextLayout.ScreenPage> previewPages = List.of();
+    private int sizeIndex = 0;
+    private List<LayoutPage> previewPages = List.of();
     private int previewPageIndex;
     private int left;
     private int top;
@@ -54,7 +56,7 @@ public final class MarkdownPadScreen extends Screen {
         left = (width - SCREEN_WIDTH) / 2;
         top = (height - SCREEN_HEIGHT) / 2;
 
-        titleBox = addRenderableWidget(new EditBox(font, left + 16, top + 28, 210, 20, Component.translatable("screen.mcdisplays.markdown_pad.title_label")));
+        titleBox = addRenderableWidget(new EditBox(font, left + 16, top + 26, 210, 20, Component.translatable("screen.mcdisplays.markdown_pad.title_label")));
         titleBox.setMaxLength(MarkdownPadItemData.maxTitleLength());
         titleBox.setHint(Component.translatable("screen.mcdisplays.markdown_pad.placeholder.title"));
         titleBox.setValue(initialTitle);
@@ -75,24 +77,31 @@ public final class MarkdownPadScreen extends Screen {
         markdownBox.setValue(initialMarkdown);
         markdownBox.setValueListener(value -> rebuildPreview());
 
-        addRenderableWidget(
-            Button.builder(Component.translatable("screen.mcdisplays.markdown_pad.save"), button -> saveAndClose())
-                .bounds(left + 244, top + 208, 76, 20)
+        sizeButton = addRenderableWidget(
+            Button.builder(currentSizeLabel(), button -> cyclePreviewSize())
+                .bounds(left + 376, top + 6, 48, 18)
                 .build()
         );
-        addRenderableWidget(
-            Button.builder(Component.translatable("screen.mcdisplays.markdown_pad.cancel"), button -> onClose())
-                .bounds(left + 328, top + 208, 76, 20)
-                .build()
-        );
+
         previousPageButton = addRenderableWidget(
             Button.builder(Component.literal("<"), button -> changePreviewPage(-1))
-                .bounds(left + 244, top + 176, 20, 20)
+                .bounds(left + 236, top + 212, 20, 20)
                 .build()
         );
         nextPageButton = addRenderableWidget(
             Button.builder(Component.literal(">"), button -> changePreviewPage(1))
-                .bounds(left + 384, top + 176, 20, 20)
+                .bounds(left + 316, top + 212, 20, 20)
+                .build()
+        );
+
+        addRenderableWidget(
+            Button.builder(Component.translatable("screen.mcdisplays.markdown_pad.save"), button -> saveAndClose())
+                .bounds(left + 344, top + 212, 42, 20)
+                .build()
+        );
+        addRenderableWidget(
+            Button.builder(Component.translatable("screen.mcdisplays.markdown_pad.cancel"), button -> onClose())
+                .bounds(left + 390, top + 212, 42, 20)
                 .build()
         );
 
@@ -100,29 +109,33 @@ public final class MarkdownPadScreen extends Screen {
         setInitialFocus(markdownBox);
     }
 
+    private Component currentSizeLabel() {
+        return Component.literal(PREVIEW_SIZES[sizeIndex][0] + "x" + PREVIEW_SIZES[sizeIndex][1]);
+    }
+
+    private void cyclePreviewSize() {
+        sizeIndex = (sizeIndex + 1) % PREVIEW_SIZES.length;
+        sizeButton.setMessage(currentSizeLabel());
+        rebuildPreview();
+    }
+
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.fill(left, top, left + SCREEN_WIDTH, top + SCREEN_HEIGHT, 0xF01F1A22);
-        guiGraphics.fill(left + 6, top + 6, left + SCREEN_WIDTH - 6, top + 46, 0xCC3A3342);
-        guiGraphics.fill(left + 236, top + 28, left + SCREEN_WIDTH - 16, top + 168, 0xCC17131C);
+        guiGraphics.fill(left + 6, top + 6, left + SCREEN_WIDTH - 6, top + 24, 0xCC3A3342);
+        guiGraphics.fill(left + 236, top + 26, left + SCREEN_WIDTH - 12, top + 206, 0xFF141119);
         drawBorder(guiGraphics, left, top, SCREEN_WIDTH, SCREEN_HEIGHT, 0xFF8E7AA5);
-        drawBorder(guiGraphics, left + 6, top + 6, SCREEN_WIDTH - 12, 40, 0xFFB6A7D3);
-        drawBorder(guiGraphics, left + 236, top + 28, 168, 140, 0xFFB6A7D3);
+        drawBorder(guiGraphics, left + 6, top + 6, SCREEN_WIDTH - 12, 18, 0xFFB6A7D3);
+        drawBorder(guiGraphics, left + 236, top + 26, SCREEN_WIDTH - 248, 180, 0xFFB6A7D3);
 
-        guiGraphics.drawString(font, title, left + 14, top + 12, 0xF4EEFF, false);
+        guiGraphics.drawString(font, title, left + 12, top + 10, 0xF4EEFF, false);
+        guiGraphics.drawString(font, Component.translatable("screen.mcdisplays.markdown_pad.preview_label"), left + 238, top + 10, 0xDDD4EA, false);
         guiGraphics.drawString(font, Component.translatable("screen.mcdisplays.markdown_pad.title_label"), left + 16, top + 16, 0xDDD4EA, false);
         guiGraphics.drawString(font, Component.translatable("screen.mcdisplays.markdown_pad.markdown_label"), left + 16, top + 50, 0xDDD4EA, false);
-        guiGraphics.drawString(font, Component.translatable("screen.mcdisplays.markdown_pad.preview_label"), left + 244, top + 16, 0xDDD4EA, false);
-        guiGraphics.drawString(font, Component.translatable("screen.mcdisplays.markdown_pad.hint"), left + 244, top + 188, 0xBFB4D2, false);
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderPreview(guiGraphics);
-    }
-
-    @Override
-    public boolean isPauseScreen() {
-        return false;
     }
 
     private void renderPreview(GuiGraphics guiGraphics) {
@@ -130,28 +143,62 @@ public final class MarkdownPadScreen extends Screen {
             return;
         }
 
-        DisplayTextLayout.ScreenPage page = previewPages.get(previewPageIndex);
-        int previewLeft = left + 246;
-        int previewTop = top + 32;
-        int lineY = previewTop + 6;
-        for (DisplayRichText.StyledLine line : page.lines()) {
-            guiGraphics.drawString(font, line.toComponent(0xF1EAFE, UNIFORM_FONT), previewLeft + 4, lineY, 0xF1EAFE, false);
-            lineY += font.lineHeight;
+        int previewAreaX = left + 238;
+        int previewAreaY = top + 28;
+        int previewAreaW = SCREEN_WIDTH - 252;
+        int previewAreaH = 176;
+
+        LayoutPage page = previewPages.get(previewPageIndex);
+        float scale = Math.min((float) previewAreaW / page.widthPx(), (float) previewAreaH / page.heightPx());
+        float renderedW = page.widthPx() * scale;
+        float renderedH = page.heightPx() * scale;
+        float originX = previewAreaX + (previewAreaW - renderedW) / 2.0F;
+        float originY = previewAreaY + (previewAreaH - renderedH) / 2.0F;
+
+        guiGraphics.enableScissor(previewAreaX, previewAreaY, previewAreaX + previewAreaW, previewAreaY + previewAreaH);
+
+        // Draw page background panel
+        guiGraphics.fill((int) originX, (int) originY, (int) (originX + renderedW), (int) (originY + renderedH), 0xFF1C1822);
+        drawBorder(guiGraphics, (int) originX, (int) originY, (int) renderedW, (int) renderedH, 0x66B6A7D3);
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(originX, originY, 0.0F);
+        guiGraphics.pose().scale(scale, scale, 1.0F);
+
+        for (LayoutPage.Op op : page.ops()) {
+            if (op instanceof LayoutPage.RectOp rect) {
+                guiGraphics.fill((int) rect.x(), (int) rect.y(), (int) (rect.x() + rect.width()), (int) (rect.y() + rect.height()), rect.argb());
+            }
         }
 
-        guiGraphics.drawString(
-            font,
-            Component.translatable("screen.mcdisplays.markdown_pad.preview_page", previewPageIndex + 1, previewPages.size()),
-            left + 270,
-            top + 182,
-            0xDDD4EA,
-            false
-        );
+        for (LayoutPage.Op op : page.ops()) {
+            if (op instanceof LayoutPage.TextOp text) {
+                ClientTextMetrics.Prepared prepared = ClientTextMetrics.prepare(text);
+                guiGraphics.pose().pushPose();
+                guiGraphics.pose().translate(text.x, text.y, 0.0F);
+                guiGraphics.pose().scale(text.scale, text.scale, 1.0F);
+                guiGraphics.drawString(font, prepared.sequence(), 0, 0, text.color | 0xFF000000, false);
+                guiGraphics.pose().popPose();
+            }
+        }
+
+        guiGraphics.pose().popPose();
+        guiGraphics.disableScissor();
+
+        if (previewPages.size() > 1) {
+            String pageStr = (previewPageIndex + 1) + "/" + previewPages.size();
+            int strW = font.width(pageStr);
+            guiGraphics.drawString(font, pageStr, left + 286 - strW / 2, top + 218, 0xDDD4EA, false);
+        }
     }
 
     private void rebuildPreview() {
-        DisplayDocument document = MarkdownToDisplayFormatter.toDocument(titleBox == null ? initialTitle : titleBox.getValue(), markdownBox == null ? initialMarkdown : markdownBox.getValue());
-        previewPages = DisplayTextLayout.layout(document, PREVIEW_BLOCKS_WIDE, PREVIEW_BLOCKS_HIGH);
+        String titleText = titleBox == null ? initialTitle : titleBox.getValue();
+        String markdownText = markdownBox == null ? initialMarkdown : markdownBox.getValue();
+        int blocksWide = PREVIEW_SIZES[sizeIndex][0];
+        int blocksHigh = PREVIEW_SIZES[sizeIndex][1];
+
+        previewPages = MarkdownLayout.layout(titleText, markdownText, blocksWide, blocksHigh, ClientTextMetrics.INSTANCE);
         previewPageIndex = Mth.clamp(previewPageIndex, 0, Math.max(0, previewPages.size() - 1));
         updatePreviewButtons();
     }
@@ -160,7 +207,6 @@ public final class MarkdownPadScreen extends Screen {
         if (previewPages.isEmpty()) {
             return;
         }
-
         previewPageIndex = Mth.clamp(previewPageIndex + delta, 0, previewPages.size() - 1);
         updatePreviewButtons();
     }
@@ -178,10 +224,15 @@ public final class MarkdownPadScreen extends Screen {
         onClose();
     }
 
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
     private void drawBorder(GuiGraphics guiGraphics, int x, int y, int width, int height, int color) {
         guiGraphics.fill(x, y, x + width, y + 1, color);
         guiGraphics.fill(x, y + height - 1, x + width, y + height, color);
-        guiGraphics.fill(x, y, x + 1, y + height, color);
-        guiGraphics.fill(x + width - 1, y, x + width, y + height, color);
+        guiGraphics.fill(x, y + 1, x + 1, y + height - 1, color);
+        guiGraphics.fill(x + width - 1, y + 1, x + width, y + height - 1, color);
     }
 }

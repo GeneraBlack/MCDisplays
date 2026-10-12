@@ -5,7 +5,9 @@ import de.gener.mcdisplays.McDisplaysMod;
 import de.gener.mcdisplays.content.DisplayCluster;
 import de.gener.mcdisplays.content.DisplayContentExtractor;
 import de.gener.mcdisplays.content.DisplayDocument;
-import de.gener.mcdisplays.content.DisplayTextLayout;
+import de.gener.mcdisplays.markdown.LayoutPage;
+import de.gener.mcdisplays.markdown.MarkdownLayout;
+import de.gener.mcdisplays.markdown.TextMetrics;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -49,6 +51,12 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     private List<String> cachedPages = List.of(DisplayDocument.placeholder().pages().get(0));
     private String cachedTitle = DisplayDocument.placeholder().title();
     private int manualPageOffset;
+    private List<LayoutPage> layoutPagesCache;
+    private String layoutTitleRef;
+    private List<String> layoutSourceRef;
+    private int layoutWidth;
+    private int layoutHeight;
+    private TextMetrics layoutMetrics;
     private int refreshTicks;
     @Nullable
     private UUID ownerUuid;
@@ -207,15 +215,24 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
         return true;
     }
 
-    public DisplayTextLayout.ScreenPage getPage(DisplayCluster.Cluster cluster) {
+    public LayoutPage getPage(DisplayCluster.Cluster cluster) {
         DisplayPanelBlockEntity sourceOwner = getDocumentOwner(cluster);
-        List<DisplayTextLayout.ScreenPage> pages = DisplayTextLayout.layout(sourceOwner.currentDocument(), cluster.width(), cluster.height());
-        int pageIndex = pages.isEmpty() ? 0 : Math.floorMod(sourceOwner.manualPageOffset, pages.size());
+        List<LayoutPage> pages = sourceOwner.layoutPages(cluster.width(), cluster.height(), TextMetrics.Holder.get());
+        int pageIndex = Math.floorMod(sourceOwner.manualPageOffset, pages.size());
         return pages.get(pageIndex);
     }
 
-    public List<String> getSlice(DisplayCluster.Cluster cluster) {
-        return DisplayTextLayout.slice(getPage(cluster), cluster.width(), cluster.height(), cluster.localX(), cluster.localY());
+    private List<LayoutPage> layoutPages(int width, int height, TextMetrics metrics) {
+        if (layoutPagesCache == null || layoutTitleRef != cachedTitle || layoutSourceRef != cachedPages
+            || layoutWidth != width || layoutHeight != height || layoutMetrics != metrics) {
+            layoutPagesCache = MarkdownLayout.layout(cachedTitle, cachedPages, width, height, metrics);
+            layoutTitleRef = cachedTitle;
+            layoutSourceRef = cachedPages;
+            layoutWidth = width;
+            layoutHeight = height;
+            layoutMetrics = metrics;
+        }
+        return layoutPagesCache;
     }
 
     public boolean canPlayerEdit(@Nullable Player player) {
@@ -307,7 +324,7 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
 
     private int getPageCount(DisplayCluster.Cluster cluster) {
         DisplayPanelBlockEntity sourceOwner = getDocumentOwner(cluster);
-        return DisplayTextLayout.layout(sourceOwner.currentDocument(), cluster.width(), cluster.height()).size();
+        return MarkdownLayout.layout(sourceOwner.cachedTitle, sourceOwner.cachedPages, cluster.width(), cluster.height(), TextMetrics.APPROXIMATE).size();
     }
 
     private void installSource(Player player, ItemStack heldStack) {

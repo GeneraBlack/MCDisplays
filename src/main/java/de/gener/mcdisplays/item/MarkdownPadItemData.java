@@ -4,7 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import de.gener.mcdisplays.McDisplaysMod;
 import de.gener.mcdisplays.content.DisplayDocument;
-import de.gener.mcdisplays.content.MarkdownToDisplayFormatter;
+import java.util.List;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -58,7 +58,7 @@ public final class MarkdownPadItemData {
     }
 
     public static DisplayDocument toDisplayDocument(ItemStack stack) {
-        return MarkdownToDisplayFormatter.toDocument(getTitle(stack), getMarkdown(stack));
+        return new DisplayDocument(getTitle(stack), List.of(getMarkdown(stack)));
     }
 
     public static int maxTitleLength() {

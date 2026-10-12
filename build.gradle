@@ -74,11 +74,22 @@ configurations {
 }
 
 dependencies {
+    def commonmarkModules = ['commonmark', 'commonmark-ext-gfm-tables', 'commonmark-ext-gfm-strikethrough', 'commonmark-ext-task-list-items']
+    commonmarkModules.each { m ->
+        implementation "org.commonmark:${m}:0.30.1"
+        jarJar("org.commonmark:${m}") { version { strictly '[0.30.1,0.31)'; prefer '0.30.1' } }
+    }
     localRuntime "com.ldtteam:minecolonies:${project.minecolonies_version}"
     localRuntime "com.ldtteam:structurize:${project.structurize_version}"
     localRuntime "com.ldtteam:blockui:${project.blockui_version}"
     localRuntime "appeng:appliedenergistics2:${project.ae2_version}"
     localRuntime "org.appliedenergistics:guideme:${project.guideme_version}"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

@@ -1,5 +1,6 @@
 package de.gener.mcdisplays;
 
+import java.util.List;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -21,6 +22,7 @@ public final class McDisplaysConfig {
     private final ModConfigSpec.BooleanValue allowManualPageTurning;
     private final ModConfigSpec.IntValue ae2WarnMinutes;
     private final ModConfigSpec.IntValue ae2AlertMinutes;
+    private final ModConfigSpec.ConfigValue<List<? extends String>> mediaBlockedHosts;
 
     private McDisplaysConfig(ModConfigSpec.Builder builder) {
         builder.comment("Gameplay settings for MC Displays.")
@@ -58,6 +60,19 @@ public final class McDisplaysConfig {
             .comment("A crafting job running longer than this many minutes is shown in red.")
             .defineInRange("alertMinutes", 60, 1, 10080);
         builder.pop();
+
+        builder.comment("Settings for images and videos on displays (media support is planned).")
+            .translation(TRANSLATION_PREFIX + ".section.media")
+            .push("media");
+        mediaBlockedHosts = builder
+            .translation(TRANSLATION_PREFIX + ".media.blockedHosts")
+            .comment("Host names (e.g. example.com) whose images and videos are never shown. Subdomains are blocked too.")
+            .defineListAllowEmpty("blockedHosts", List.of(), () -> "example.com", value -> value instanceof String);
+        builder.pop();
+    }
+
+    public static List<? extends String> blockedMediaHosts() {
+        return INSTANCE.mediaBlockedHosts.get();
     }
 
     public static int warnMinutes() {

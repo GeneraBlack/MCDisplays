@@ -14,6 +14,7 @@ public final class McDisplaysModClient {
 
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        de.gener.mcdisplays.markdown.TextMetrics.Holder.install(ClientTextMetrics.INSTANCE);
         event.registerBlockEntityRenderer(McDisplaysMod.DISPLAY_PANEL_BLOCK_ENTITY.get(), DisplayPanelBlockEntityRenderer::new);
     }
 

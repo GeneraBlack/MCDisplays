@@ -17,7 +17,7 @@
   "screen.mcdisplays.markdown_pad": "Markdown Pad",
   "screen.mcdisplays.markdown_pad.title_label": "Title",
   "screen.mcdisplays.markdown_pad.markdown_label": "Markdown",
-  "screen.mcdisplays.markdown_pad.preview_label": "Preview (2x1 display)",
+  "screen.mcdisplays.markdown_pad.preview_label": "Live Preview",
   "screen.mcdisplays.markdown_pad.placeholder.title": "Optional display title",
   "screen.mcdisplays.markdown_pad.placeholder.markdown": "# Heading\n\n**Bold** text, *italic* text, and [#ff8800]color[/].\n\n> Quote\n\n| Name | Value |\n| --- | ---: |\n| Wood | 64 |",
   "screen.mcdisplays.markdown_pad.hint": "Supports headings, lists, blockquotes, tables, code, links, and color tags like [red], [color=#ff8800], [#55ff55], and [/].",
@@ -66,5 +66,8 @@
   "mcdisplays.configuration.ae2.warnMinutes": "Warning after (minutes)",
   "mcdisplays.configuration.ae2.warnMinutes.tooltip": "Crafting jobs running longer than this are shown in orange.",
   "mcdisplays.configuration.ae2.alertMinutes": "Alert after (minutes)",
-  "mcdisplays.configuration.ae2.alertMinutes.tooltip": "Crafting jobs running longer than this are shown in red."
+  "mcdisplays.configuration.ae2.alertMinutes.tooltip": "Crafting jobs running longer than this are shown in red.",
+  "mcdisplays.configuration.section.media": "Media Settings",
+  "mcdisplays.configuration.media.blockedHosts": "Blocked Media Hosts",
+  "mcdisplays.configuration.media.blockedHosts.tooltip": "Host names (e.g. example.com) whose images and videos are never displayed."
 }
