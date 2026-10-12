@@ -95,6 +95,7 @@ public final class MarkdownPadScreen extends Screen {
     private int screenWidth;
     private int left;
     private int top;
+    private long screenImageVersion;
 
     public MarkdownPadScreen(InteractionHand hand, ItemStack stack) {
         super(Component.translatable("screen.mcdisplays.markdown_pad"));
@@ -107,6 +108,7 @@ public final class MarkdownPadScreen extends Screen {
     protected void init() {
         super.init();
         showWiki = width >= 580;
+        screenImageVersion = ClientImageManager.getVersion();
         setupLayout();
     }
 
@@ -274,6 +276,12 @@ public final class MarkdownPadScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        long currentImageVersion = ClientImageManager.getVersion();
+        if (currentImageVersion != screenImageVersion) {
+            screenImageVersion = currentImageVersion;
+            rebuildPreview();
+        }
+
         // 1. Clean dark backdrop scrim behind the editor without post-process blur shader
         renderTransparentBackground(guiGraphics);
         guiGraphics.fillGradient(0, 0, width, height, 0x88000000, 0xB8000000);
@@ -411,6 +419,12 @@ public final class MarkdownPadScreen extends Screen {
         }
 
         for (LayoutPage.Op op : page.ops()) {
+            if (op instanceof LayoutPage.ImageOp img) {
+                renderPreviewImage(guiGraphics, img);
+            }
+        }
+
+        for (LayoutPage.Op op : page.ops()) {
             if (op instanceof LayoutPage.TextOp text) {
                 ClientTextMetrics.Prepared prepared = ClientTextMetrics.prepare(text);
                 guiGraphics.pose().pushPose();
@@ -423,6 +437,58 @@ public final class MarkdownPadScreen extends Screen {
 
         guiGraphics.pose().popPose();
         guiGraphics.disableScissor();
+    }
+
+    private void renderPreviewImage(GuiGraphics guiGraphics, LayoutPage.ImageOp img) {
+        int x = (int) img.x();
+        int y = (int) img.y();
+        int w = (int) img.width();
+        int h = (int) img.height();
+
+        if (img.blocked()) {
+            drawBorder(guiGraphics, x, y, w, h, 0x66FF5555);
+            String label = "[Blocked] " + img.url();
+            int tw = font.width(label);
+            int tx = x + Math.max(0, (w - tw) / 2);
+            int ty = y + Math.max(0, (h - font.lineHeight) / 2);
+            guiGraphics.drawString(font, label, tx, ty, 0xFFFF7777, false);
+            return;
+        }
+
+        ClientImageManager.ImageInfo info = ClientImageManager.getImage(img.url());
+        if (info != null && info.location() != null) {
+            guiGraphics.blit(
+                info.location(),
+                x,
+                y,
+                w,
+                h,
+                0.0F,
+                0.0F,
+                info.width(),
+                info.height(),
+                info.width(),
+                info.height()
+            );
+            return;
+        }
+
+        ClientImageManager.Status status = ClientImageManager.getStatus(img.url());
+        if (status == ClientImageManager.Status.FAILED) {
+            drawBorder(guiGraphics, x, y, w, h, 0x66FF5555);
+            String label = img.alt().isBlank() ? "Failed to load image" : img.alt();
+            int tw = font.width(label);
+            int tx = x + Math.max(0, (w - tw) / 2);
+            int ty = y + Math.max(0, (h - font.lineHeight) / 2);
+            guiGraphics.drawString(font, label, tx, ty, 0xFFFF6666, false);
+        } else {
+            drawBorder(guiGraphics, x, y, w, h, 0x6688B6A7);
+            String label = img.alt().isBlank() ? "Loading image..." : img.alt();
+            int tw = font.width(label);
+            int tx = x + Math.max(0, (w - tw) / 2);
+            int ty = y + Math.max(0, (h - font.lineHeight) / 2);
+            guiGraphics.drawString(font, label, tx, ty, 0xFFB6A7D3, false);
+        }
     }
 
     private void rebuildPreview() {

@@ -33,6 +33,16 @@ public final class ClientTextMetrics implements TextMetrics {
         return mc.font.lineHeight;
     }
 
+    @Override
+    public float imageAspectRatio(String url) {
+        return ClientImageManager.getAspectRatio(url);
+    }
+
+    @Override
+    public long imageVersion() {
+        return ClientImageManager.getVersion();
+    }
+
     public static MutableComponent component(String text, int flags, int color) {
         return Component.literal(text).withStyle(style -> style
             .withColor(color & 0xFFFFFF)

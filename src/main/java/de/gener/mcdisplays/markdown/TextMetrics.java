@@ -13,6 +13,16 @@ public interface TextMetrics {
         return false;
     }
 
+    /** Aspect ratio (width / height) of an image at the given URL, or 1.0F if unknown. */
+    default float imageAspectRatio(String url) {
+        return 1.0F;
+    }
+
+    /** Monotonically increasing revision number for loaded images. */
+    default long imageVersion() {
+        return 0L;
+    }
+
     TextMetrics APPROXIMATE = new TextMetrics() {
         @Override
         public float width(String text, int flags) {

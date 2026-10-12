@@ -167,4 +167,32 @@ public class MarkdownTest {
         assertFalse(pages.isEmpty());
         assertFalse(pages.get(0).ops().isEmpty(), "Empty list item should still render its bullet marker");
     }
+
+    @Test
+    void testImageLayoutAndImageOp() {
+        String md = "![My Cool Image](https://example.com/pic.png)";
+        List<Block> blocks = MarkdownParser.parse(md);
+        assertEquals(1, blocks.size());
+        assertInstanceOf(Block.Image.class, blocks.get(0));
+        Block.Image imgBlock = (Block.Image) blocks.get(0);
+        assertEquals("My Cool Image", imgBlock.alt());
+        assertEquals("https://example.com/pic.png", imgBlock.url());
+
+        List<LayoutPage> pages = MarkdownLayout.layout("Test", md, 2, 1, TextMetrics.APPROXIMATE);
+        assertFalse(pages.isEmpty());
+        LayoutPage page = pages.get(0);
+
+        boolean foundImageOp = false;
+        for (LayoutPage.Op op : page.ops()) {
+            if (op instanceof LayoutPage.ImageOp imageOp) {
+                foundImageOp = true;
+                assertEquals("https://example.com/pic.png", imageOp.url());
+                assertEquals("My Cool Image", imageOp.alt());
+                assertFalse(imageOp.blocked());
+                assertTrue(imageOp.width() > 0);
+                assertTrue(imageOp.height() > 0);
+            }
+        }
+        assertTrue(foundImageOp, "Layout should emit ImageOp for markdown images");
+    }
 }

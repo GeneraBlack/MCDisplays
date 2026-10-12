@@ -68,12 +68,71 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
         }
 
         for (LayoutPage.Op op : page.ops()) {
+            if (op instanceof LayoutPage.ImageOp img) {
+                drawImage(img, poseStack, bufferSource, glowingDisplay, textLight);
+            }
+        }
+
+        for (LayoutPage.Op op : page.ops()) {
             if (op instanceof LayoutPage.TextOp text) {
                 drawText(text, poseStack, bufferSource, glowingDisplay, textLight);
             }
         }
 
         poseStack.popPose();
+    }
+
+    private void drawImage(LayoutPage.ImageOp op, PoseStack poseStack, MultiBufferSource bufferSource, boolean glowing, int light) {
+        Matrix4f pose = poseStack.last().pose();
+        float x1 = op.x();
+        float y1 = op.y();
+        float x2 = x1 + op.width();
+        float y2 = y1 + op.height();
+
+        if (op.blocked()) {
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, "Media blocked", 0x88FF5555, 0xFFFF6666, light);
+            return;
+        }
+
+        ClientImageManager.ImageInfo info = ClientImageManager.getImage(op.url());
+        if (info != null) {
+            VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(info.location()));
+            int alpha = glowing ? 255 : 240;
+            consumer.addVertex(pose, x1, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 1.0F).setLight(light);
+            consumer.addVertex(pose, x2, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 1.0F).setLight(light);
+            consumer.addVertex(pose, x2, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 0.0F).setLight(light);
+            consumer.addVertex(pose, x1, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 0.0F).setLight(light);
+            return;
+        }
+
+        ClientImageManager.Status status = ClientImageManager.getStatus(op.url());
+        if (status == ClientImageManager.Status.FAILED) {
+            String label = op.alt().isBlank() ? "Failed to load image" : op.alt();
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, label, 0x66FF5555, 0xFFFF6666, light);
+        } else {
+            String label = op.alt().isBlank() ? "Loading image..." : op.alt();
+            drawPlaceholder(pose, bufferSource, x1, y1, x2, y2, label, 0x6688B6A7, 0xFFB6A7D3, light);
+        }
+    }
+
+    private void drawPlaceholder(Matrix4f pose, MultiBufferSource bufferSource, float x1, float y1, float x2, float y2, String text, int borderColor, int textColor, int light) {
+        VertexConsumer rects = bufferSource.getBuffer(RenderType.debugQuads());
+        drawRectDirect(rects, pose, x1, y1, x2, y1 + 1.0F, borderColor);
+        drawRectDirect(rects, pose, x1, y2 - 1.0F, x2, y2, borderColor);
+        drawRectDirect(rects, pose, x1, y1, x1 + 1.0F, y2, borderColor);
+        drawRectDirect(rects, pose, x2 - 1.0F, y1, x2, y2, borderColor);
+
+        float textW = font.width(text);
+        float tx = x1 + Math.max(0.0F, (x2 - x1 - textW) / 2.0F);
+        float ty = y1 + Math.max(0.0F, (y2 - y1 - font.lineHeight) / 2.0F);
+        font.drawInBatch(net.minecraft.network.chat.Component.literal(text), tx, ty, textColor, false, pose, bufferSource, Font.DisplayMode.POLYGON_OFFSET, 0, light);
+    }
+
+    private static void drawRectDirect(VertexConsumer consumer, Matrix4f pose, float x1, float y1, float x2, float y2, int color) {
+        consumer.addVertex(pose, x1, y2, 0.0F).setColor(color);
+        consumer.addVertex(pose, x2, y2, 0.0F).setColor(color);
+        consumer.addVertex(pose, x2, y1, 0.0F).setColor(color);
+        consumer.addVertex(pose, x1, y1, 0.0F).setColor(color);
     }
 
     private static void drawRect(VertexConsumer consumer, PoseStack poseStack, LayoutPage.RectOp rect) {

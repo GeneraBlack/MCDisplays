@@ -111,7 +111,13 @@ public final class MarkdownLayout {
                     float dx = MARGIN;
                     float dy = MARGIN + headerHeight + placed.y();
                     for (LayoutPage.Op op : placed.box().ops()) {
-                        ops.add(op instanceof LayoutPage.TextOp text ? text.moved(dx, dy) : ((LayoutPage.RectOp) op).moved(dx, dy));
+                        if (op instanceof LayoutPage.TextOp text) {
+                            ops.add(text.moved(dx, dy));
+                        } else if (op instanceof LayoutPage.RectOp rect) {
+                            ops.add(rect.moved(dx, dy));
+                        } else if (op instanceof LayoutPage.ImageOp img) {
+                            ops.add(img.moved(dx, dy));
+                        }
                     }
                 }
                 if (pages.size() > 1) {
@@ -479,19 +485,27 @@ public final class MarkdownLayout {
         // ---- media placeholder ----
 
         private List<Box> layoutImage(Block.Image image) {
-            float height = Math.max(24.0F, Math.min(contentWidth * 0.5F, 56.0F));
-            int border = image.blocked() ? 0x88FF5555 : 0x88F6D58B;
-            List<LayoutPage.Op> ops = new ArrayList<>();
-            ops.add(new LayoutPage.RectOp(0.0F, 0.0F, contentWidth, 1.0F, border));
-            ops.add(new LayoutPage.RectOp(0.0F, height - 1.0F, contentWidth, 1.0F, border));
-            ops.add(new LayoutPage.RectOp(0.0F, 0.0F, 1.0F, height, border));
-            ops.add(new LayoutPage.RectOp(contentWidth - 1.0F, 0.0F, 1.0F, height, border));
+            float available = contentWidth;
+            float aspect = 1.0F;
+            if (metrics != null) {
+                float a = metrics.imageAspectRatio(image.url());
+                if (a > 0.05F) {
+                    aspect = a;
+                }
+            }
 
-            String label = image.blocked() ? "Media blocked" : (image.alt().isBlank() ? "Image" : image.alt());
-            String shown = truncate(label, contentWidth - 8.0F, 0);
-            float labelWidth = metrics.width(shown, 0);
-            ops.add(new LayoutPage.TextOp(shown, 0, image.blocked() ? 0xFF8888 : COLOR_QUOTE, (contentWidth - labelWidth) / 2.0F, (height - metrics.lineHeight()) / 2.0F, 1.0F));
-            return List.of(new Box(4.0F, height, false, ops));
+            float targetWidth = available;
+            float targetHeight = targetWidth / aspect;
+            float maxHeight = Math.max(32.0F, pageHeight - 2.0F * MARGIN - 16.0F);
+            if (targetHeight > maxHeight) {
+                targetHeight = maxHeight;
+                targetWidth = targetHeight * aspect;
+            }
+
+            float x = Math.max(0.0F, (available - targetWidth) / 2.0F);
+            List<LayoutPage.Op> ops = new ArrayList<>();
+            ops.add(new LayoutPage.ImageOp(image.url(), image.alt(), image.blocked(), x, 0.0F, targetWidth, targetHeight));
+            return List.of(new Box(4.0F, targetHeight, false, ops));
         }
 
         private String truncate(String text, float maxWidth, int flags) {

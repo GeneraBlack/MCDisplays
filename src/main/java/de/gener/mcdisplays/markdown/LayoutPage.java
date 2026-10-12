@@ -7,7 +7,7 @@ import java.util.List;
  * a display block is {@link MarkdownLayout#PX_PER_BLOCK} pixels wide and high.
  */
 public record LayoutPage(List<Op> ops, int index, int total, int widthPx, int heightPx) {
-    public sealed interface Op permits TextOp, RectOp {
+    public sealed interface Op permits TextOp, RectOp, ImageOp {
     }
 
     /** A single styled text run. {@link #renderCache} lets the renderer keep prepared text between frames. */
@@ -29,15 +29,22 @@ public record LayoutPage(List<Op> ops, int index, int total, int widthPx, int he
             this.scale = scale;
         }
 
-        TextOp moved(float dx, float dy) {
+        public TextOp moved(float dx, float dy) {
             return new TextOp(text, flags, color, x + dx, y + dy, scale);
         }
     }
 
     /** A filled rectangle with an ARGB color. */
     public record RectOp(float x, float y, float width, float height, int argb) implements Op {
-        RectOp moved(float dx, float dy) {
+        public RectOp moved(float dx, float dy) {
             return new RectOp(x + dx, y + dy, width, height, argb);
+        }
+    }
+
+    /** A remote or local image drawn on the display. */
+    public record ImageOp(String url, String alt, boolean blocked, float x, float y, float width, float height) implements Op {
+        public ImageOp moved(float dx, float dy) {
+            return new ImageOp(url, alt, blocked, x + dx, y + dy, width, height);
         }
     }
 }

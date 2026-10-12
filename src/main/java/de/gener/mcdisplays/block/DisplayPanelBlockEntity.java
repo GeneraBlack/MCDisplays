@@ -57,6 +57,7 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     private int layoutWidth;
     private int layoutHeight;
     private TextMetrics layoutMetrics;
+    private long layoutImageVersion;
     private int refreshTicks;
     @Nullable
     private UUID ownerUuid;
@@ -223,14 +224,17 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     }
 
     private List<LayoutPage> layoutPages(int width, int height, TextMetrics metrics) {
+        long currentImageVersion = metrics.imageVersion();
         if (layoutPagesCache == null || layoutTitleRef != cachedTitle || layoutSourceRef != cachedPages
-            || layoutWidth != width || layoutHeight != height || layoutMetrics != metrics) {
+            || layoutWidth != width || layoutHeight != height || layoutMetrics != metrics
+            || layoutImageVersion != currentImageVersion) {
             layoutPagesCache = MarkdownLayout.layout(cachedTitle, cachedPages, width, height, metrics);
             layoutTitleRef = cachedTitle;
             layoutSourceRef = cachedPages;
             layoutWidth = width;
             layoutHeight = height;
             layoutMetrics = metrics;
+            layoutImageVersion = currentImageVersion;
         }
         return layoutPagesCache;
     }
