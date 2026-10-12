@@ -127,7 +127,11 @@ public final class MarkdownParser {
                     addList((ListBlock) child, quoteDepth, indent + 1, forcedAlign);
                 } else {
                     walkSingle(child, quoteDepth, indent + 1, forcedAlign);
+                    markerPending = false;
                 }
+            }
+            if (markerPending) {
+                blocks.add(new Block.Text(0, List.of(new Block.Span("", -1, 0)), currentAlign(forcedAlign), indent + 1, marker, quoteDepth, false));
             }
             first = false;
         }

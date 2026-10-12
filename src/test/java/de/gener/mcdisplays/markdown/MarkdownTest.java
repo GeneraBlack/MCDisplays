@@ -153,4 +153,18 @@ public class MarkdownTest {
         Block.Code code = (Block.Code) blocks.get(3);
         assertEquals(List.of("int x = 42;"), code.lines());
     }
+
+    @Test
+    void testEmptyListItem() {
+        String md = "- \n";
+        List<Block> blocks = MarkdownParser.parse(md);
+        assertEquals(1, blocks.size());
+        assertInstanceOf(Block.Text.class, blocks.get(0));
+        Block.Text listBlock = (Block.Text) blocks.get(0);
+        assertEquals("\u2022", listBlock.marker());
+
+        List<LayoutPage> pages = MarkdownLayout.layout("", md, 2, 1, TextMetrics.APPROXIMATE);
+        assertFalse(pages.isEmpty());
+        assertFalse(pages.get(0).ops().isEmpty(), "Empty list item should still render its bullet marker");
+    }
 }

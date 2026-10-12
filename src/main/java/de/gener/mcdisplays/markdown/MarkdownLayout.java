@@ -178,12 +178,21 @@ public final class MarkdownLayout {
             float available = Math.max(8.0F, contentWidth - textStart);
 
             List<Line> lines = wrap(block.spans(), available, scale, color, baseFlags);
-            if (lines.isEmpty()) {
-                return List.of();
-            }
-
             float height = lineHeight * scale;
             float gap = level > 0 ? Math.round(5.0F * scale) : (block.tight() ? 1.0F : 4.0F);
+
+            if (lines.isEmpty()) {
+                if (!block.marker().isEmpty()) {
+                    List<LayoutPage.Op> ops = new ArrayList<>();
+                    float markerWidth = metrics.width(block.marker(), 0);
+                    ops.add(new LayoutPage.TextOp(block.marker(), 0, COLOR_TITLE, textStart - 3.0F - markerWidth, 0.0F, 1.0F));
+                    for (int depth = 0; depth < block.quoteDepth(); depth++) {
+                        ops.add(new LayoutPage.RectOp(depth * QUOTE_STEP + 1.0F, 0.0F, 2.0F, height, 0x88F6D58B));
+                    }
+                    return List.of(new Box(gap, height, false, ops));
+                }
+                return List.of();
+            }
             List<Box> boxes = new ArrayList<>(lines.size());
             for (int index = 0; index < lines.size(); index++) {
                 Line line = lines.get(index);
