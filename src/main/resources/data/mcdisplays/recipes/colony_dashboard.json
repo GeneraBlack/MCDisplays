@@ -1,0 +1,12 @@
+﻿{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:book" },
+    { "item": "minecraft:compass" },
+    { "item": "minecraft:redstone" }
+  ],
+  "result": {
+    "item": "mcdisplays:colony_dashboard",
+    "count": 1
+  }
+}
