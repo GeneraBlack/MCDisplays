@@ -87,7 +87,7 @@ public final class MarkdownLayout {
         List<LayoutPage> run(String title, List<Block> blocks) {
             // Cinema fullscreen mode: if the document consists solely of a video block and title is empty/none/cinema
             if (blocks.size() == 1 && blocks.get(0) instanceof Block.Video video && (video.cinema() || title.isEmpty() || "none".equalsIgnoreCase(title))) {
-                List<LayoutPage.Op> ops = List.of(new LayoutPage.VideoOp(video.url(), video.title(), video.volume(), video.distance(), video.loop(), true, video.blocked(), video.audioSource(), 0.0F, 0.0F, pageWidth, pageHeight));
+                List<LayoutPage.Op> ops = List.of(new LayoutPage.VideoOp(video.url(), video.title(), video.volume(), video.distance(), video.loop(), true, video.blocked(), video.audioSource(), video.startEpoch(), 0.0F, 0.0F, pageWidth, pageHeight));
                 return List.of(new LayoutPage(ops, 0, 1, pageWidth, pageHeight));
             }
 
@@ -532,7 +532,7 @@ public final class MarkdownLayout {
 
             float x = Math.max(0.0F, (available - targetWidth) / 2.0F);
             List<LayoutPage.Op> ops = new ArrayList<>();
-            ops.add(new LayoutPage.VideoOp(video.url(), video.title(), video.volume(), video.distance(), video.loop(), video.cinema(), video.blocked(), video.audioSource(), x, 0.0F, targetWidth, targetHeight));
+            ops.add(new LayoutPage.VideoOp(video.url(), video.title(), video.volume(), video.distance(), video.loop(), video.cinema(), video.blocked(), video.audioSource(), video.startEpoch(), x, 0.0F, targetWidth, targetHeight));
             return List.of(new Box(4.0F, targetHeight, false, ops));
         }
 

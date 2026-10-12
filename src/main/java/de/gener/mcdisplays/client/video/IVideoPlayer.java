@@ -64,5 +64,8 @@ public interface IVideoPlayer {
         return "";
     }
 
+    default void syncPlaybackTime(long startEpochMs) {
+    }
+
     void release();
 }

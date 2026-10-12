@@ -1,6 +1,6 @@
-# MC Displays 1.3.0 (NeoForge 1.21.1)
+# MC Displays 1.3.1 (NeoForge 1.21.1)
 
-Welcome to MC Displays 1.3.0! This release introduces the **Cinema Projector** system with real-time video streaming, spatial cinema acoustics, remote linking, modern player UI, alongside major Markdown Pad and display improvements.
+Welcome to MC Displays 1.3.1! This release introduces the **Cinema Projector** system with real-time video streaming, multiplayer playback synchronization, spatial cinema acoustics, remote linking, modern player UI, alongside major Markdown Pad and display improvements.
 
 ---
 
@@ -8,6 +8,7 @@ Welcome to MC Displays 1.3.0! This release introduces the **Cinema Projector** s
 - **Cinema Projector Block:** Place a projector and stream videos, live streams, and media directly onto any size modular screen cluster (e.g. 16x9, 8x4, or massive cinema walls).
 - **Cinema Remote Control:** Bind any screen cluster to a projector with right-click linking. Projector stores cluster coordinates and resolution.
 - **WATERMeDIA Integration:** Seamlessly streams direct MP4, WebM, HLS (`.m3u8`), Twitch, Kick, and YouTube (with the WATERMeDIA YouTube addon).
+- **Multiplayer Playback Synchronization:** Synchronizes playback timestamps for late joiners and automatically resyncs clients if network lag or buffering causes drift, ensuring all players watch the exact same video frame together.
 - **Borderless Fullscreen Auto-Scaling:** Videos are cleanly scaled to the display wall geometry without distortion or letterbox borders.
 - **Nighttime Full-Bright Cinema Lighting:** Displays render cinema feeds with full brightness in the dark, matching a true theater experience.
 

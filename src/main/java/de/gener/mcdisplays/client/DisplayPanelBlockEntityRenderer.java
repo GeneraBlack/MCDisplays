@@ -128,9 +128,12 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
             BlockPos audioPos = isProjector ? projectorPos : pos;
 
             // Register/update continuous spatial audio tracking in ClientVideoManager (prevents camera culling mute)
-            ClientVideoManager.updateAudioSource(pos, audioPos, isProjector, cluster, facing, op.volume(), op.distance());
+            ClientVideoManager.updateAudioSource(pos, audioPos, isProjector, cluster, facing, op.volume(), op.distance(), op.startEpoch());
 
             if (player.isReady()) {
+                if (op.startEpoch() > 0L) {
+                    player.syncPlaybackTime(op.startEpoch());
+                }
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.player != null) {
                     double dist;

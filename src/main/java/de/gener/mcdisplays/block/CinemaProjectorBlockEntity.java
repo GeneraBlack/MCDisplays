@@ -31,6 +31,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
     private static final String TAG_DISTANCE = "Distance";
     private static final String TAG_LOOP = "Loop";
     private static final String TAG_AUDIO_PROJECTOR = "AudioFromProjector";
+    private static final String TAG_START_EPOCH = "StartEpoch";
 
     @Nullable
     private BlockPos linkedScreenPos;
@@ -42,6 +43,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
     private int distance = 32;
     private boolean loop = true;
     private boolean audioFromProjector = true;
+    private long playbackStartEpochMs = 0L;
     private int checkTicks;
 
     public CinemaProjectorBlockEntity(BlockPos pos, BlockState blockState) {
@@ -113,6 +115,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         this.linkedWidth = 0;
         this.linkedHeight = 0;
         this.playing = false;
+        this.playbackStartEpochMs = 0L;
         if (level != null) {
             BlockState state = getBlockState();
             if (state.hasProperty(CinemaProjectorBlock.LINKED) && state.hasProperty(CinemaProjectorBlock.PLAYING)) {
@@ -123,11 +126,21 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
     }
 
     public void updatePlayback(String newUrl, boolean newPlaying, int newVolume, int newDistance, boolean newLoop) {
+        boolean wasPlaying = this.playing;
+        String prevUrl = this.url;
         this.url = normalizeUrl(newUrl);
         this.volume = Math.clamp(newVolume, 0, 100);
         this.distance = Math.clamp(newDistance, 8, 128);
         this.loop = newLoop;
         this.playing = newPlaying && this.linkedScreenPos != null && !this.url.isBlank();
+
+        if (this.playing) {
+            if (!wasPlaying || !this.url.equals(prevUrl) || this.playbackStartEpochMs <= 0L) {
+                this.playbackStartEpochMs = System.currentTimeMillis();
+            }
+        } else {
+            this.playbackStartEpochMs = 0L;
+        }
 
         if (level != null) {
             BlockState state = getBlockState();
@@ -158,6 +171,10 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         this.audioFromProjector = audioFromProjector;
     }
 
+    public long getPlaybackStartEpochMs() {
+        return playbackStartEpochMs;
+    }
+
     public void syncDisplayScreen() {
         if (level == null || linkedScreenPos == null || level.isClientSide) {
             return;
@@ -172,10 +189,11 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         BlockPos masterPos = cluster.origin();
         if (level.getBlockEntity(masterPos) instanceof DisplayPanelBlockEntity display) {
             if (this.playing && !this.url.isBlank()) {
-                String videoTag = String.format("<video src=\"%s\" volume=\"%d\" distance=\"%d\" %saudio=\"%s\" cinema />",
+                String videoTag = String.format("<video src=\"%s\" volume=\"%d\" distance=\"%d\" %saudio=\"%s\" startEpoch=\"%d\" cinema />",
                     this.url, this.volume, this.distance,
                     this.loop ? "loop " : "",
-                    this.audioFromProjector ? "projector" : "screen");
+                    this.audioFromProjector ? "projector" : "screen",
+                    this.playbackStartEpochMs);
                 display.setCinemaFeed(worldPosition, "Cinema Video", videoTag);
             } else {
                 String standby = String.format(
@@ -226,6 +244,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         tag.putInt(TAG_DISTANCE, distance);
         tag.putBoolean(TAG_LOOP, loop);
         tag.putBoolean(TAG_AUDIO_PROJECTOR, audioFromProjector);
+        tag.putLong(TAG_START_EPOCH, playbackStartEpochMs);
     }
 
     @Override
@@ -244,6 +263,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         distance = tag.contains(TAG_DISTANCE) ? tag.getInt(TAG_DISTANCE) : 32;
         loop = !tag.contains(TAG_LOOP) || tag.getBoolean(TAG_LOOP);
         audioFromProjector = !tag.contains(TAG_AUDIO_PROJECTOR) || tag.getBoolean(TAG_AUDIO_PROJECTOR);
+        playbackStartEpochMs = tag.getLong(TAG_START_EPOCH);
     }
 
     @Override

@@ -48,9 +48,13 @@ public sealed interface Block {
     }
 
     /** Video stream block (YouTube, Twitch, CDN, MP4, WebM, HLS). */
-    record Video(String url, String title, int volume, int distance, boolean loop, boolean cinema, boolean blocked, String audioSource) implements Block {
+    record Video(String url, String title, int volume, int distance, boolean loop, boolean cinema, boolean blocked, String audioSource, long startEpoch) implements Block {
+        public Video(String url, String title, int volume, int distance, boolean loop, boolean cinema, boolean blocked, String audioSource) {
+            this(url, title, volume, distance, loop, cinema, blocked, audioSource, 0L);
+        }
+
         public Video(String url, String title, int volume, int distance, boolean loop, boolean cinema, boolean blocked) {
-            this(url, title, volume, distance, loop, cinema, blocked, "projector");
+            this(url, title, volume, distance, loop, cinema, blocked, "projector", 0L);
         }
     }
 }

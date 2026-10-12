@@ -57,6 +57,7 @@ public final class MarkdownParser {
     private static final Pattern HTML_ATTR_VOLUME = Pattern.compile("volume\\s*=\\s*[\"']?(\\d+)[\"']?", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_DISTANCE = Pattern.compile("distance\\s*=\\s*[\"']?(\\d+)[\"']?", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_AUDIO = Pattern.compile("audio\\s*=\\s*[\"']?([a-zA-Z0-9_-]+)[\"']?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern HTML_ATTR_START_EPOCH = Pattern.compile("startEpoch\\s*=\\s*[\"']?(\\d+)[\"']?", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_LOOP = Pattern.compile("\\bloop\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_CINEMA = Pattern.compile("\\b(cinema|fullscreen)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_BR = Pattern.compile("<\\s*br\\s*/?\\s*>", Pattern.CASE_INSENSITIVE);
@@ -266,8 +267,16 @@ public final class MarkdownParser {
                 }
                 String titleStr = title.find() ? title.group(1) : "Video";
                 String audioSource = audioMatch.find() ? audioMatch.group(1) : "projector";
+                Matcher startEpochMatch = HTML_ATTR_START_EPOCH.matcher(tag);
+                long startEpoch = 0L;
+                if (startEpochMatch.find()) {
+                    try {
+                        startEpoch = Long.parseLong(startEpochMatch.group(1));
+                    } catch (Exception ignored) {
+                    }
+                }
 
-                blocks.add(new Block.Video(url, titleStr, volume, distance, loop, cinema, !MediaPolicy.isAllowed(url), audioSource));
+                blocks.add(new Block.Video(url, titleStr, volume, distance, loop, cinema, !MediaPolicy.isAllowed(url), audioSource, startEpoch));
             }
         }
 

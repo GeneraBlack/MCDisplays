@@ -31,14 +31,20 @@ public final class ClientVideoManager {
         public Direction facing;
         public int volume;
         public int distance;
+        public long startEpoch;
 
-        public AudioSourceInfo(BlockPos pos, boolean isProjector, @Nullable DisplayCluster.Cluster cluster, @Nullable Direction facing, int volume, int distance) {
+        public AudioSourceInfo(BlockPos pos, boolean isProjector, @Nullable DisplayCluster.Cluster cluster, @Nullable Direction facing, int volume, int distance, long startEpoch) {
             this.pos = pos;
             this.isProjector = isProjector;
             this.cluster = cluster;
             this.facing = facing;
             this.volume = volume;
             this.distance = distance;
+            this.startEpoch = startEpoch;
+        }
+
+        public AudioSourceInfo(BlockPos pos, boolean isProjector, @Nullable DisplayCluster.Cluster cluster, @Nullable Direction facing, int volume, int distance) {
+            this(pos, isProjector, cluster, facing, volume, distance, 0L);
         }
     }
 
@@ -85,7 +91,7 @@ public final class ClientVideoManager {
         }
     }
 
-    public static void updateAudioSource(Object key, BlockPos audioPos, boolean isProjector, @Nullable DisplayCluster.Cluster cluster, @Nullable Direction facing, int volume, int distance) {
+    public static void updateAudioSource(Object key, BlockPos audioPos, boolean isProjector, @Nullable DisplayCluster.Cluster cluster, @Nullable Direction facing, int volume, int distance, long startEpoch) {
         AudioSourceInfo info = AUDIO_SOURCES.get(key);
         if (info != null) {
             info.pos = audioPos;
@@ -94,9 +100,14 @@ public final class ClientVideoManager {
             info.facing = facing;
             info.volume = volume;
             info.distance = distance;
+            info.startEpoch = startEpoch;
         } else {
-            AUDIO_SOURCES.put(key, new AudioSourceInfo(audioPos, isProjector, cluster, facing, volume, distance));
+            AUDIO_SOURCES.put(key, new AudioSourceInfo(audioPos, isProjector, cluster, facing, volume, distance, startEpoch));
         }
+    }
+
+    public static void updateAudioSource(Object key, BlockPos audioPos, boolean isProjector, @Nullable DisplayCluster.Cluster cluster, @Nullable Direction facing, int volume, int distance) {
+        updateAudioSource(key, audioPos, isProjector, cluster, facing, volume, distance, 0L);
     }
 
     public static void setLocalAudioSettings(Object key, BlockPos audioPos, boolean isProjector, int volume, int distance) {
@@ -156,20 +167,25 @@ public final class ClientVideoManager {
                 continue;
             }
 
-            // Continuous spatial audio ticking every client tick (independent of camera frustum):
+            // Continuous spatial audio and playback time ticking every client tick (independent of camera frustum):
             AudioSourceInfo audio = AUDIO_SOURCES.get(key);
-            if (audio != null && player.isReady() && mc.player != null) {
-                double dist;
-                if (audio.isProjector || audio.cluster == null || audio.facing == null) {
-                    dist = Math.sqrt(mc.player.distanceToSqr(
-                        audio.pos.getX() + 0.5D,
-                        audio.pos.getY() + 0.5D,
-                        audio.pos.getZ() + 0.5D
-                    ));
-                } else {
-                    dist = getDistanceToCluster(mc.player.position(), audio.pos, audio.cluster.width(), audio.cluster.height(), audio.facing);
+            if (audio != null && player.isReady()) {
+                if (audio.startEpoch > 0L) {
+                    player.syncPlaybackTime(audio.startEpoch);
                 }
-                player.tickAudio(dist, audio.volume, audio.distance);
+                if (mc.player != null) {
+                    double dist;
+                    if (audio.isProjector || audio.cluster == null || audio.facing == null) {
+                        dist = Math.sqrt(mc.player.distanceToSqr(
+                            audio.pos.getX() + 0.5D,
+                            audio.pos.getY() + 0.5D,
+                            audio.pos.getZ() + 0.5D
+                        ));
+                    } else {
+                        dist = getDistanceToCluster(mc.player.position(), audio.pos, audio.cluster.width(), audio.cluster.height(), audio.facing);
+                    }
+                    player.tickAudio(dist, audio.volume, audio.distance);
+                }
             }
         }
     }

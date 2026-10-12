@@ -24,6 +24,8 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
     private final long creationTime;
     private String lastLoggedState = "";
     private int lastVolume = -1;
+    private boolean initialSynced;
+    private long lastSeekTime;
 
     public WaterMediaVideoPlayer(String url, boolean loop, String safeId) {
         this.url = url;
@@ -207,6 +209,54 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
         if (Math.abs(finalVolume - lastVolume) >= 1 || (finalVolume == 0 && lastVolume != 0)) {
             player.setVolume(finalVolume);
             lastVolume = finalVolume;
+        }
+    }
+
+    @Override
+    public void syncPlaybackTime(long startEpochMs) {
+        if (startEpochMs <= 0L || player == null || released || failed || !isReady()) {
+            return;
+        }
+
+        long duration = getDuration();
+        // Live streams (Twitch/Kick/HLS live) typically have unknown duration (<= 0) - don't seek live streams
+        if (duration <= 0) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        long elapsedMs = now - startEpochMs;
+        if (elapsedMs < 0) {
+            elapsedMs = 0;
+        }
+
+        if (loop) {
+            elapsedMs = elapsedMs % duration;
+        } else if (elapsedMs >= duration) {
+            // Video has ended in real-time
+            return;
+        }
+
+        long currentTime = getTime();
+        long diff = Math.abs(currentTime - elapsedMs);
+
+        if (!initialSynced) {
+            // First time player becomes ready: if late by more than 1 second, jump immediately to current timestamp
+            if (elapsedMs > 1000L && diff > 1500L) {
+                McDisplaysMod.LOGGER.info("WaterMedia [{}] initial sync seek to {} ms (was {} ms, diff {} ms)",
+                    safeId, elapsedMs, currentTime, diff);
+                player.seekTo(elapsedMs);
+                lastSeekTime = now;
+            }
+            initialSynced = true;
+        } else {
+            // Continuous resync: if local playback drifted by more than 3 seconds (buffering or lag), catch up
+            if (diff > 3000L && (now - lastSeekTime > 5000L)) {
+                McDisplaysMod.LOGGER.info("WaterMedia [{}] resyncing playback drift: seek to {} ms (was {} ms, diff {} ms)",
+                    safeId, elapsedMs, currentTime, diff);
+                player.seekTo(elapsedMs);
+                lastSeekTime = now;
+            }
         }
     }
 
