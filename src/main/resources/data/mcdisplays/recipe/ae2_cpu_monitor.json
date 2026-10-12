@@ -1,0 +1,12 @@
+﻿{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:book" },
+    { "item": "minecraft:clock" },
+    { "item": "minecraft:quartz" }
+  ],
+  "result": {
+    "id": "mcdisplays:ae2_cpu_monitor",
+    "count": 1
+  }
+}
