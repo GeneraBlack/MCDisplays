@@ -23,6 +23,7 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
     private boolean hasEverDecodedFrame;
     private final long creationTime;
     private String lastLoggedState = "";
+    private int lastVolume = -1;
 
     public WaterMediaVideoPlayer(String url, boolean loop, String safeId) {
         this.url = url;
@@ -180,25 +181,33 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.isPaused()) {
-            player.setVolume(0);
+            if (lastVolume != 0) {
+                player.setVolume(0);
+                lastVolume = 0;
+            }
             return;
         }
 
         if (distanceToListener >= maxDistance || maxDistance <= 0) {
-            player.setVolume(0);
+            if (lastVolume != 0) {
+                player.setVolume(0);
+                lastVolume = 0;
+            }
             return;
         }
 
-        float distRatio = (float) (distanceToListener / maxDistance);
-        float distFactor = 1.0F - Mth.clamp(distRatio, 0.0F, 1.0F);
-        distFactor = distFactor * distFactor;
+        // Linear distance falloff (1.0 at origin down to 0.0 at maxDistance)
+        float distFactor = 1.0F - Mth.clamp((float) (distanceToListener / maxDistance), 0.0F, 1.0F);
 
         float mcMaster = mc.options.getSoundSourceVolume(SoundSource.MASTER);
         float mcRecords = mc.options.getSoundSourceVolume(SoundSource.RECORDS);
-        float overallFactor = distFactor * mcMaster * mcRecords;
+        float soundScale = mcMaster * (mcRecords > 0.0F ? mcRecords : 1.0F);
 
-        int finalVolume = Math.round(targetVolume * overallFactor);
-        player.setVolume(Mth.clamp(finalVolume, 0, 100));
+        int finalVolume = Mth.clamp(Math.round(targetVolume * distFactor * soundScale), 0, 100);
+        if (Math.abs(finalVolume - lastVolume) >= 1 || (finalVolume == 0 && lastVolume != 0)) {
+            player.setVolume(finalVolume);
+            lastVolume = finalVolume;
+        }
     }
 
     @Override

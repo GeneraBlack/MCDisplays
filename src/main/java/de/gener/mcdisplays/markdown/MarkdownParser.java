@@ -56,6 +56,7 @@ public final class MarkdownParser {
     private static final Pattern HTML_ATTR_TITLE = Pattern.compile("title\\s*=\\s*[\"']([^\"']*)[\"']", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_VOLUME = Pattern.compile("volume\\s*=\\s*[\"']?(\\d+)[\"']?", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_DISTANCE = Pattern.compile("distance\\s*=\\s*[\"']?(\\d+)[\"']?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern HTML_ATTR_AUDIO = Pattern.compile("audio\\s*=\\s*[\"']?([a-zA-Z0-9_-]+)[\"']?", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_LOOP = Pattern.compile("\\bloop\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_ATTR_CINEMA = Pattern.compile("\\b(cinema|fullscreen)\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern HTML_BR = Pattern.compile("<\\s*br\\s*/?\\s*>", Pattern.CASE_INSENSITIVE);
@@ -245,6 +246,7 @@ public final class MarkdownParser {
                 Matcher title = HTML_ATTR_TITLE.matcher(tag);
                 Matcher vol = HTML_ATTR_VOLUME.matcher(tag);
                 Matcher dist = HTML_ATTR_DISTANCE.matcher(tag);
+                Matcher audioMatch = HTML_ATTR_AUDIO.matcher(tag);
                 boolean loop = HTML_ATTR_LOOP.matcher(tag).find();
                 boolean cinema = HTML_ATTR_CINEMA.matcher(tag).find();
 
@@ -263,8 +265,9 @@ public final class MarkdownParser {
                     }
                 }
                 String titleStr = title.find() ? title.group(1) : "Video";
+                String audioSource = audioMatch.find() ? audioMatch.group(1) : "projector";
 
-                blocks.add(new Block.Video(url, titleStr, volume, distance, loop, cinema, !MediaPolicy.isAllowed(url)));
+                blocks.add(new Block.Video(url, titleStr, volume, distance, loop, cinema, !MediaPolicy.isAllowed(url), audioSource));
             }
         }
 

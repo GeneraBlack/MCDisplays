@@ -49,9 +49,13 @@ public record LayoutPage(List<Op> ops, int index, int total, int widthPx, int he
     }
 
     /** A video stream drawn on the display. */
-    public record VideoOp(String url, String title, int volume, int distance, boolean loop, boolean cinema, boolean blocked, float x, float y, float width, float height) implements Op {
+    public record VideoOp(String url, String title, int volume, int distance, boolean loop, boolean cinema, boolean blocked, String audioSource, float x, float y, float width, float height) implements Op {
+        public VideoOp(String url, String title, int volume, int distance, boolean loop, boolean cinema, boolean blocked, float x, float y, float width, float height) {
+            this(url, title, volume, distance, loop, cinema, blocked, "projector", x, y, width, height);
+        }
+
         public VideoOp moved(float dx, float dy) {
-            return new VideoOp(url, title, volume, distance, loop, cinema, blocked, x + dx, y + dy, width, height);
+            return new VideoOp(url, title, volume, distance, loop, cinema, blocked, audioSource, x + dx, y + dy, width, height);
         }
     }
 }

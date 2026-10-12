@@ -30,6 +30,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
     private static final String TAG_VOLUME = "Volume";
     private static final String TAG_DISTANCE = "Distance";
     private static final String TAG_LOOP = "Loop";
+    private static final String TAG_AUDIO_PROJECTOR = "AudioFromProjector";
 
     @Nullable
     private BlockPos linkedScreenPos;
@@ -40,6 +41,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
     private int volume = 80;
     private int distance = 32;
     private boolean loop = true;
+    private boolean audioFromProjector = true;
     private int checkTicks;
 
     public CinemaProjectorBlockEntity(BlockPos pos, BlockState blockState) {
@@ -137,6 +139,25 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         markUpdated();
     }
 
+    public void updateSettings(int newVolume, int newDistance, boolean newLoop, boolean newAudioFromProjector) {
+        this.volume = Math.clamp(newVolume, 0, 100);
+        this.distance = Math.clamp(newDistance, 8, 128);
+        this.loop = newLoop;
+        this.audioFromProjector = newAudioFromProjector;
+        if (level != null && linkedScreenPos != null) {
+            syncDisplayScreen();
+        }
+        markUpdated();
+    }
+
+    public boolean isAudioFromProjector() {
+        return audioFromProjector;
+    }
+
+    public void setAudioFromProjector(boolean audioFromProjector) {
+        this.audioFromProjector = audioFromProjector;
+    }
+
     public void syncDisplayScreen() {
         if (level == null || linkedScreenPos == null || level.isClientSide) {
             return;
@@ -151,8 +172,10 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         BlockPos masterPos = cluster.origin();
         if (level.getBlockEntity(masterPos) instanceof DisplayPanelBlockEntity display) {
             if (this.playing && !this.url.isBlank()) {
-                String videoTag = String.format("<video src=\"%s\" volume=\"%d\" distance=\"%d\" %scinema />",
-                    this.url, this.volume, this.distance, this.loop ? "loop " : "");
+                String videoTag = String.format("<video src=\"%s\" volume=\"%d\" distance=\"%d\" %saudio=\"%s\" cinema />",
+                    this.url, this.volume, this.distance,
+                    this.loop ? "loop " : "",
+                    this.audioFromProjector ? "projector" : "screen");
                 display.setCinemaFeed(worldPosition, "Cinema Video", videoTag);
             } else {
                 String standby = String.format(
@@ -202,6 +225,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         tag.putInt(TAG_VOLUME, volume);
         tag.putInt(TAG_DISTANCE, distance);
         tag.putBoolean(TAG_LOOP, loop);
+        tag.putBoolean(TAG_AUDIO_PROJECTOR, audioFromProjector);
     }
 
     @Override
@@ -219,6 +243,7 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
         volume = tag.contains(TAG_VOLUME) ? tag.getInt(TAG_VOLUME) : 80;
         distance = tag.contains(TAG_DISTANCE) ? tag.getInt(TAG_DISTANCE) : 32;
         loop = !tag.contains(TAG_LOOP) || tag.getBoolean(TAG_LOOP);
+        audioFromProjector = !tag.contains(TAG_AUDIO_PROJECTOR) || tag.getBoolean(TAG_AUDIO_PROJECTOR);
     }
 
     @Override

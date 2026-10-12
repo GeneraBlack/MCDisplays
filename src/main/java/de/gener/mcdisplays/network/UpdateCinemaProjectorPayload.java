@@ -17,11 +17,13 @@ public record UpdateCinemaProjectorPayload(
     String url,
     boolean loop,
     int volume,
-    int distance
+    int distance,
+    boolean audioFromProjector
 ) implements CustomPacketPayload {
     public static final int ACTION_PLAY = 0;
     public static final int ACTION_STOP = 1;
     public static final int ACTION_UNLINK = 2;
+    public static final int ACTION_SETTINGS = 3;
 
     public static final Type<UpdateCinemaProjectorPayload> TYPE = new Type<>(
         ResourceLocation.fromNamespaceAndPath(McDisplaysMod.MODID, "update_cinema_projector")
@@ -44,6 +46,7 @@ public record UpdateCinemaProjectorPayload(
         buffer.writeBoolean(loop);
         buffer.writeVarInt(volume);
         buffer.writeVarInt(distance);
+        buffer.writeBoolean(audioFromProjector);
     }
 
     public static UpdateCinemaProjectorPayload decode(FriendlyByteBuf buffer) {
@@ -53,7 +56,8 @@ public record UpdateCinemaProjectorPayload(
             buffer.readUtf(2048),
             buffer.readBoolean(),
             buffer.readVarInt(),
-            buffer.readVarInt()
+            buffer.readVarInt(),
+            buffer.readBoolean()
         );
     }
 
@@ -77,11 +81,15 @@ public record UpdateCinemaProjectorPayload(
 
             if (player.level().getBlockEntity(payload.projectorPos) instanceof CinemaProjectorBlockEntity projector) {
                 if (payload.action == ACTION_PLAY) {
+                    projector.setAudioFromProjector(payload.audioFromProjector);
                     projector.updatePlayback(payload.url, true, payload.volume, payload.distance, payload.loop);
                 } else if (payload.action == ACTION_STOP) {
+                    projector.setAudioFromProjector(payload.audioFromProjector);
                     projector.updatePlayback(payload.url, false, payload.volume, payload.distance, payload.loop);
                 } else if (payload.action == ACTION_UNLINK) {
                     projector.unlinkScreen();
+                } else if (payload.action == ACTION_SETTINGS) {
+                    projector.updateSettings(payload.volume, payload.distance, payload.loop, payload.audioFromProjector);
                 }
             }
         });

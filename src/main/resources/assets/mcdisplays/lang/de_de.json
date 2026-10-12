@@ -111,5 +111,9 @@
   "gui.mcdisplays.cinema_projector.spatial_subhint": "Gleichmäßige Lautstärke vor dem Cluster, realistischer Distanzabfall",
   "gui.mcdisplays.cinema_projector.source_section": "Video-Quelle / Stream-URL",
   "gui.mcdisplays.cinema_projector.platform_hint": "Direkte MP4/WebM/HLS (m3u8), Twitch & Kick laufen direkt. YouTube benötigt das WATERMeDIA-Plugin.",
-  "gui.mcdisplays.cinema_projector.acoustics_section": "Räumliche Akustik & Wiedergabe"
+  "gui.mcdisplays.cinema_projector.acoustics_section": "Räumliche Akustik & Wiedergabe",
+  "gui.mcdisplays.cinema_projector.audio_source": "Audio-Quelle: %s",
+  "gui.mcdisplays.cinema_projector.audio_projector": "Audio: Projektor",
+  "gui.mcdisplays.cinema_projector.audio_screen": "Audio: Leinwand",
+  "gui.mcdisplays.cinema_projector.audio_source_tooltip": "Bestimmt, woher der Ton im Raum kommt (Kino-Projektorblock oder Leinwand-Wand)"
 }

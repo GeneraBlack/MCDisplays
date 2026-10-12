@@ -25,6 +25,7 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
     private Button playButton;
     private Button stopButton;
     private Button loopButton;
+    private Button audioSourceButton;
     private Button unlinkButton;
     private VolumeSlider volumeSlider;
     private DistanceSlider distanceSlider;
@@ -32,6 +33,7 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
     private int currentVolume = 80;
     private int currentDistance = 32;
     private boolean currentLoop = true;
+    private boolean currentAudioFromProjector = true;
 
     public CinemaProjectorScreen(CinemaProjectorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -48,6 +50,7 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         this.currentVolume = projector.getVolume();
         this.currentDistance = projector.getDistance();
         this.currentLoop = projector.isLoop();
+        this.currentAudioFromProjector = projector.isAudioFromProjector();
 
         int left = leftPos;
         int top = topPos;
@@ -88,6 +91,13 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
             Button.builder(getLoopText(), button -> toggleLoop())
                 .bounds(left + 16, subControlsY, 140, 20)
                 .tooltip(Tooltip.create(Component.translatable("gui.mcdisplays.cinema_projector.loop_tooltip")))
+                .build()
+        );
+
+        audioSourceButton = addRenderableWidget(
+            Button.builder(getAudioSourceText(), button -> toggleAudioSource())
+                .bounds(left + 164, subControlsY, 150, 20)
+                .tooltip(Tooltip.create(Component.translatable("gui.mcdisplays.cinema_projector.audio_source_tooltip")))
                 .build()
         );
 
@@ -144,10 +154,19 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         if (loopButton != null) {
             loopButton.setMessage(getLoopText());
         }
+        if (audioSourceButton != null) {
+            audioSourceButton.setMessage(getAudioSourceText());
+        }
     }
 
     private Component getLoopText() {
         return Component.translatable("gui.mcdisplays.cinema_projector.loop_state", currentLoop ? Component.translatable("gui.mcdisplays.cinema_projector.on") : Component.translatable("gui.mcdisplays.cinema_projector.off"));
+    }
+
+    private Component getAudioSourceText() {
+        return Component.translatable(currentAudioFromProjector
+            ? "gui.mcdisplays.cinema_projector.audio_projector"
+            : "gui.mcdisplays.cinema_projector.audio_screen");
     }
 
     private void toggleLoop() {
@@ -155,6 +174,40 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         if (loopButton != null) {
             loopButton.setMessage(getLoopText());
         }
+        sendSettingsUpdate();
+    }
+
+    private void toggleAudioSource() {
+        currentAudioFromProjector = !currentAudioFromProjector;
+        if (audioSourceButton != null) {
+            audioSourceButton.setMessage(getAudioSourceText());
+        }
+        sendSettingsUpdate();
+    }
+
+    private void sendSettingsUpdate() {
+        CinemaProjectorBlockEntity projector = menu.blockEntity();
+        PacketDistributor.sendToServer(new UpdateCinemaProjectorPayload(
+            projector.getBlockPos(),
+            UpdateCinemaProjectorPayload.ACTION_SETTINGS,
+            urlBox != null ? urlBox.getValue().trim() : "",
+            currentLoop,
+            currentVolume,
+            currentDistance,
+            currentAudioFromProjector
+        ));
+
+        BlockPos masterScreenPos = projector.getLinkedScreenPos();
+        if (masterScreenPos != null) {
+            BlockPos audioOrigin = currentAudioFromProjector ? projector.getBlockPos() : masterScreenPos;
+            ClientVideoManager.setLocalAudioSettings(masterScreenPos, audioOrigin, currentAudioFromProjector, currentVolume, currentDistance);
+        }
+    }
+
+    @Override
+    public void onClose() {
+        sendSettingsUpdate();
+        super.onClose();
     }
 
     private void pasteClipboard() {
@@ -177,7 +230,8 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
             normalized,
             currentLoop,
             currentVolume,
-            currentDistance
+            currentDistance,
+            currentAudioFromProjector
         ));
     }
 
@@ -189,7 +243,8 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
             urlBox.getValue().trim(),
             currentLoop,
             currentVolume,
-            currentDistance
+            currentDistance,
+            currentAudioFromProjector
         ));
     }
 
@@ -201,7 +256,8 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
             "",
             false,
             currentVolume,
-            currentDistance
+            currentDistance,
+            currentAudioFromProjector
         ));
     }
 
@@ -271,7 +327,7 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         guiGraphics.fill(left + 8, top + 164, left + imageWidth - 8, top + 252, 0xBB1E1925);
         drawBorder(guiGraphics, left + 8, top + 164, imageWidth - 16, 88, 0xFF433954);
         guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.acoustics_section"), left + 16, top + 171, 0xFFCE93D8, false);
-        guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.spatial_subhint"), left + 166, top + 222, 0xFF90A4AE, false);
+        guiGraphics.drawString(font, Component.translatable("gui.mcdisplays.cinema_projector.spatial_subhint"), left + 16, top + 240, 0xFF90A4AE, false);
 
         // Action row background panel
         guiGraphics.fill(left + 8, top + 258, left + imageWidth - 8, top + imageHeight - 8, 0xDD1E1925);
@@ -311,6 +367,7 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         @Override
         protected void applyValue() {
             currentVolume = (int) Math.round(value * 100);
+            sendSettingsUpdate();
         }
     }
 
@@ -329,6 +386,7 @@ public final class CinemaProjectorScreen extends AbstractContainerScreen<CinemaP
         @Override
         protected void applyValue() {
             currentDistance = (int) Math.round(8 + value * (128 - 8));
+            sendSettingsUpdate();
         }
     }
 }

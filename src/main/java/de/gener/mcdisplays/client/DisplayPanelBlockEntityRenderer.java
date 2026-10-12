@@ -85,7 +85,7 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
 
         for (LayoutPage.Op op : page.ops()) {
             if (op instanceof LayoutPage.VideoOp vid) {
-                drawVideo(vid, cluster, state.getValue(DisplayPanelBlock.FACING), blockEntity.getBlockPos(), poseStack, bufferSource, glowingDisplay, textLight);
+                drawVideo(vid, cluster, state.getValue(DisplayPanelBlock.FACING), blockEntity, poseStack, bufferSource, glowingDisplay, textLight);
             }
         }
 
@@ -98,7 +98,7 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
         poseStack.popPose();
     }
 
-    private void drawVideo(LayoutPage.VideoOp op, DisplayCluster.Cluster cluster, Direction facing, BlockPos pos, PoseStack poseStack, MultiBufferSource bufferSource, boolean glowing, int light) {
+    private void drawVideo(LayoutPage.VideoOp op, DisplayCluster.Cluster cluster, Direction facing, DisplayPanelBlockEntity blockEntity, PoseStack poseStack, MultiBufferSource bufferSource, boolean glowing, int light) {
         Matrix4f pose = poseStack.last().pose();
         float x1 = op.x();
         float y1 = op.y();
@@ -117,13 +117,32 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
             return;
         }
 
+        BlockPos pos = blockEntity.getBlockPos();
         IVideoPlayer player = ClientVideoManager.getOrCreate(pos, op.url(), op.loop());
         if (player != null) {
             player.preRender();
+
+            // Determine audio source origin (Projector block or Screen cluster)
+            BlockPos projectorPos = blockEntity.getCinemaProjectorPos();
+            boolean isProjector = !"screen".equalsIgnoreCase(op.audioSource()) && projectorPos != null;
+            BlockPos audioPos = isProjector ? projectorPos : pos;
+
+            // Register/update continuous spatial audio tracking in ClientVideoManager (prevents camera culling mute)
+            ClientVideoManager.updateAudioSource(pos, audioPos, isProjector, cluster, facing, op.volume(), op.distance());
+
             if (player.isReady()) {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.player != null) {
-                    double dist = ClientVideoManager.getDistanceToCluster(mc.player.position(), pos, cluster.width(), cluster.height(), facing);
+                    double dist;
+                    if (isProjector) {
+                        dist = Math.sqrt(mc.player.distanceToSqr(
+                            audioPos.getX() + 0.5D,
+                            audioPos.getY() + 0.5D,
+                            audioPos.getZ() + 0.5D
+                        ));
+                    } else {
+                        dist = ClientVideoManager.getDistanceToCluster(mc.player.position(), pos, cluster.width(), cluster.height(), facing);
+                    }
                     player.tickAudio(dist, op.volume(), op.distance());
                 }
 
