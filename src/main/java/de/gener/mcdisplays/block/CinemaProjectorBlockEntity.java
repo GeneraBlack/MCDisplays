@@ -62,9 +62,13 @@ public final class CinemaProjectorBlockEntity extends BlockEntity implements Men
                 BlockState targetState = level.getBlockState(entity.linkedScreenPos);
                 if (!(targetState.getBlock() instanceof DisplayPanelBlock)) {
                     entity.unlinkScreen();
-                } else if (level.getBlockEntity(entity.linkedScreenPos) instanceof DisplayPanelBlockEntity display) {
-                    if (!display.isCinemaActive()) {
-                        entity.syncDisplayScreen();
+                } else {
+                    DisplayCluster.Cluster cluster = DisplayCluster.find(level, entity.linkedScreenPos, targetState);
+                    BlockPos masterPos = cluster.origin();
+                    if (level.getBlockEntity(masterPos) instanceof DisplayPanelBlockEntity masterDisplay) {
+                        if (!masterDisplay.isCinemaActive()) {
+                            entity.syncDisplayScreen();
+                        }
                     }
                 }
             }

@@ -83,12 +83,16 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
         if (blockEntity.refreshTicks >= McDisplaysConfig.refreshIntervalTicks()) {
             blockEntity.refreshTicks = 0;
             if (blockEntity.cinemaActive) {
-                if (blockEntity.cinemaProjectorPos == null || !level.isLoaded(blockEntity.cinemaProjectorPos)
-                    || !(level.getBlockEntity(blockEntity.cinemaProjectorPos) instanceof CinemaProjectorBlockEntity projector)
-                    || !pos.equals(projector.getLinkedScreenPos())) {
+                if (blockEntity.cinemaProjectorPos == null) {
                     blockEntity.cinemaActive = false;
-                    blockEntity.cinemaProjectorPos = null;
                     blockEntity.refreshFromSource();
+                } else if (level.isLoaded(blockEntity.cinemaProjectorPos)) {
+                    BlockEntity be = level.getBlockEntity(blockEntity.cinemaProjectorPos);
+                    if (!(be instanceof CinemaProjectorBlockEntity projector) || !projector.isLinked()) {
+                        blockEntity.cinemaActive = false;
+                        blockEntity.cinemaProjectorPos = null;
+                        blockEntity.refreshFromSource();
+                    }
                 }
             } else {
                 blockEntity.refreshFromSource();
@@ -382,6 +386,10 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
     }
 
     public void setCinemaFeed(BlockPos projectorPos, String title, String markdown) {
+        if (this.cinemaActive && projectorPos.equals(this.cinemaProjectorPos)
+            && title.equals(this.cachedTitle) && List.of(markdown).equals(this.cachedPages)) {
+            return;
+        }
         this.cinemaProjectorPos = projectorPos;
         this.cinemaActive = true;
         this.cachedTitle = title;
@@ -697,7 +705,9 @@ public final class DisplayPanelBlockEntity extends BlockEntity implements Contai
                 cachedTitle = placeholder.title();
             }
         } else {
-            cachedPages = List.copyOf(pages);
+            if (!cachedPages.equals(pages)) {
+                cachedPages = List.copyOf(pages);
+            }
             if (cachedTitle.isBlank()) {
                 cachedTitle = "Display";
             }

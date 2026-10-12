@@ -114,23 +114,25 @@ public final class DisplayPanelBlockEntityRenderer implements BlockEntityRendere
         }
 
         IVideoPlayer player = ClientVideoManager.getOrCreate(pos, op.url(), op.loop());
-        if (player != null && player.isReady()) {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) {
-                double dist = ClientVideoManager.getDistanceToCluster(mc.player.position(), pos, cluster.width(), cluster.height(), facing);
-                player.tickAudio(dist, op.volume(), op.distance());
-            }
-
+        if (player != null) {
             player.preRender();
-            ResourceLocation location = player.getLocation();
-            if (location != null) {
-                VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(location));
-                int alpha = 255;
-                consumer.addVertex(pose, x1, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 1.0F).setLight(videoLight);
-                consumer.addVertex(pose, x2, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 1.0F).setLight(videoLight);
-                consumer.addVertex(pose, x2, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 0.0F).setLight(videoLight);
-                consumer.addVertex(pose, x1, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 0.0F).setLight(videoLight);
-                return;
+            if (player.isReady()) {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player != null) {
+                    double dist = ClientVideoManager.getDistanceToCluster(mc.player.position(), pos, cluster.width(), cluster.height(), facing);
+                    player.tickAudio(dist, op.volume(), op.distance());
+                }
+
+                ResourceLocation location = player.getLocation();
+                if (location != null) {
+                    VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(location));
+                    int alpha = 255;
+                    consumer.addVertex(pose, x1, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 1.0F).setLight(videoLight);
+                    consumer.addVertex(pose, x2, y2, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 1.0F).setLight(videoLight);
+                    consumer.addVertex(pose, x2, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(1.0F, 0.0F).setLight(videoLight);
+                    consumer.addVertex(pose, x1, y1, 0.0F).setColor(255, 255, 255, alpha).setUv(0.0F, 0.0F).setLight(videoLight);
+                    return;
+                }
             }
         }
 

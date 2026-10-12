@@ -15,7 +15,7 @@ import net.neoforged.fml.ModList;
 public final class ClientVideoManager {
     private static final Map<Object, IVideoPlayer> ACTIVE_PLAYERS = new ConcurrentHashMap<>();
     private static final Map<Object, String> ACTIVE_URLS = new ConcurrentHashMap<>();
-    private static final long INACTIVITY_TIMEOUT_MS = 6000L; // 6 seconds before releasing unrendered stream
+    private static final long INACTIVITY_TIMEOUT_MS = 20000L; // 20 seconds before releasing unrendered stream
     private static Boolean waterMediaInstalled = null;
 
     private ClientVideoManager() {
@@ -79,7 +79,7 @@ public final class ClientVideoManager {
         while (it.hasNext()) {
             Map.Entry<Object, IVideoPlayer> entry = it.next();
             IVideoPlayer player = entry.getValue();
-            if (player == null || player.isBroken() || (now - player.getLastSeenTime() > INACTIVITY_TIMEOUT_MS)) {
+            if (player == null || (now - player.getLastSeenTime() > INACTIVITY_TIMEOUT_MS)) {
                 ACTIVE_URLS.remove(entry.getKey());
                 if (player != null) {
                     player.release();
