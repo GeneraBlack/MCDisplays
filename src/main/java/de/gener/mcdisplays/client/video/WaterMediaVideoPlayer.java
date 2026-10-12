@@ -18,6 +18,7 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
     private long lastSeenTime;
     private boolean started;
     private boolean released;
+    private String lastLoggedState = "";
 
     public WaterMediaVideoPlayer(String url, boolean loop, String safeId) {
         this.url = url;
@@ -26,6 +27,7 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
         this.location = ResourceLocation.fromNamespaceAndPath(McDisplaysMod.MODID, "vtex_" + safeId);
         this.lastSeenTime = System.currentTimeMillis();
 
+        McDisplaysMod.LOGGER.info("Created WaterMediaVideoPlayer [{}] for URL: {}", safeId, url);
         try {
             this.player = new VideoPlayer(Minecraft.getInstance());
             this.texture = new VideoTexture(this.player.texture());
@@ -41,7 +43,14 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
     public void start() {
         if (player != null && !started && !released) {
             try {
-                player.start(URI.create(url));
+                URI uri;
+                try {
+                    uri = org.watermedia.api.network.NetworkAPI.parseURI(url);
+                } catch (Throwable ignored) {
+                    uri = URI.create(url);
+                }
+                McDisplaysMod.LOGGER.info("Starting WaterMedia playback [{}] URI: {}", safeId, uri);
+                player.start(uri);
                 player.setRepeatMode(loop);
                 started = true;
             } catch (Throwable t) {
@@ -170,12 +179,33 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
     }
 
     @Override
+    public String getStateName() {
+        return player != null && !released ? player.getStateName() : "RELEASED";
+    }
+
+    @Override
+    public boolean isLoading() {
+        return player != null && !released && player.isLoading();
+    }
+
+    @Override
+    public boolean isBuffering() {
+        return player != null && !released && player.isBuffering();
+    }
+
+    @Override
     @SuppressWarnings("removal")
     public void preRender() {
         if (player != null && !released) {
             player.preRender();
             if (texture != null) {
                 texture.updateId(player.texture());
+            }
+            String current = getStateName();
+            if (!current.equals(lastLoggedState)) {
+                lastLoggedState = current;
+                McDisplaysMod.LOGGER.info("WaterMedia [{}] state changed -> {} (ready={}, broken={}, time={}/{}ms)",
+                    safeId, current, isReady(), isBroken(), getTime(), getDuration());
             }
         }
     }
@@ -194,6 +224,7 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
     public void release() {
         if (!released) {
             released = true;
+            McDisplaysMod.LOGGER.info("Releasing WaterMediaVideoPlayer [{}] for URL: {}", safeId, url);
             if (player != null) {
                 try {
                     player.stop();
@@ -202,6 +233,10 @@ public final class WaterMediaVideoPlayer implements IVideoPlayer {
                     McDisplaysMod.LOGGER.warn("Error while releasing VideoPlayer for {}", url, t);
                 }
                 player = null;
+            }
+            try {
+                Minecraft.getInstance().getTextureManager().release(this.location);
+            } catch (Throwable ignored) {
             }
         }
     }

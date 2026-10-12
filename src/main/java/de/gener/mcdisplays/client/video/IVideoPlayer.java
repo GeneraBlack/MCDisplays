@@ -48,5 +48,17 @@ public interface IVideoPlayer {
 
     long getLastSeenTime();
 
+    default String getStateName() {
+        return "UNKNOWN";
+    }
+
+    default boolean isLoading() {
+        return false;
+    }
+
+    default boolean isBuffering() {
+        return false;
+    }
+
     void release();
 }

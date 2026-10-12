@@ -210,6 +210,12 @@ public final class MarkdownPadScreen extends Screen {
         setInitialFocus(markdownBox);
     }
 
+    @Override
+    public void removed() {
+        super.removed();
+        ClientVideoManager.stopPlayer("preview_screen");
+    }
+
     private void toggleWiki() {
         showWiki = !showWiki;
         setupLayout();
@@ -527,25 +533,27 @@ public final class MarkdownPadScreen extends Screen {
         }
 
         IVideoPlayer player = ClientVideoManager.getOrCreate("preview_screen", vid.url(), vid.loop());
-        if (player != null && player.isReady()) {
-            player.setVolume(0); // Mute audio during editor preview
+        if (player != null) {
             player.preRender();
-            ResourceLocation location = player.getLocation();
-            if (location != null) {
-                guiGraphics.blit(
-                    location,
-                    x,
-                    y,
-                    w,
-                    h,
-                    0.0F,
-                    0.0F,
-                    player.getWidth(),
-                    player.getHeight(),
-                    player.getWidth(),
-                    player.getHeight()
-                );
-                return;
+            if (player.isReady()) {
+                player.setVolume(0); // Mute audio during editor preview
+                ResourceLocation location = player.getLocation();
+                if (location != null) {
+                    guiGraphics.blit(
+                        location,
+                        x,
+                        y,
+                        w,
+                        h,
+                        0.0F,
+                        0.0F,
+                        player.getWidth(),
+                        player.getHeight(),
+                        player.getWidth(),
+                        player.getHeight()
+                    );
+                    return;
+                }
             }
         }
 

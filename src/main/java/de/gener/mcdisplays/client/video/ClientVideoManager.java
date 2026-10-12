@@ -39,12 +39,12 @@ public final class ClientVideoManager {
         String currentUrl = ACTIVE_URLS.get(key);
         IVideoPlayer player = ACTIVE_PLAYERS.get(key);
 
-        if (player != null && url.equals(currentUrl) && !player.isBroken()) {
+        if (player != null && url.equals(currentUrl)) {
             player.markSeen();
             return player;
         }
 
-        // Release old player if URL changed or broken
+        // Release old player if URL changed
         if (player != null) {
             stopPlayer(key);
         }
